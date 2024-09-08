@@ -78,7 +78,6 @@ THIRD_PARTY_APPS = [
     "allauth.mfa",
     "allauth.socialaccount",
     "rest_framework",
-    "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
 ]
@@ -290,7 +289,7 @@ SOCIALACCOUNT_FORMS = {"signup": "server.users.forms.UserSocialSignupForm"}
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -301,12 +300,69 @@ CORS_URLS_REGEX = r"^/api/.*$"
 
 # By Default swagger ui is available only to admin user(s). You can change permission classes to change that
 # See more configuration options at https://drf-spectacular.readthedocs.io/en/latest/settings.html#settings
+# DRF Spectacular settings
+# https://drf-spectacular.readthedocs.io/en/latest/settings.html
 SPECTACULAR_SETTINGS = {
-    "TITLE": "GestionTUP-backend API",
-    "DESCRIPTION": "Documentation of API endpoints of GestionTUP-backend",
-    "VERSION": "1.0.0",
-    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
-    "SCHEMA_PATH_PREFIX": "/api/",
+    "TITLE": "Gestion TUP API",
+    "DESCRIPTION": "API Endpoint Documentation for Gestion TUP",
+    "VERSION": "0.1.0",
+    "TOS": "https://github.com/Seminario-Integrador-2024/GestionTUP-backend/blob/main/README.md",
+    "CONTACT": {
+        "name": "API Support",
+        "url": "https://github.com/carlosferreyra",
+        "email": "eduferreyraok@gmail.com",
+    },
+    "LICENSE": {
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    "SERVERS": [
+        {
+            "url": "{protocol}://{host}{port}/",
+            "description": "Development server",
+            "variables": {
+                "protocol": {
+                    "description": "Protocol (http only for now)",
+                    "default": "http",
+                    "enum": ["http", "https"],
+                },
+                "host": {
+                    "description": "Hostname (FQDN)",
+                    "default": "localhost",
+                    "enum": [
+                        "gestiontup-42tx6kvt3q-uc.a.run.app",
+                        "localhost",
+                    ],
+                },
+                "port": {
+                    "description": "server port",
+                    "default": ":8000",
+                    "enum": ["", ":8000"],
+                },
+            },
+        },
+    ],
+    "COMPONENT_SPLIT_REQUEST": True,
+    "COMPONENT_NO_READ_ONLY_REQUIRED": True,
+    "SWAGGER_UI_SETTINGS": {  # Swagger UI settings
+        "deepLinking": True,
+        "persist authorization": True,
+        "showExtensions": True,  # Display vendor-specific extensions
+        "showCommonExtensions": True,  # Display common extensions
+        "docExpansion": "none",  # Expand operations by default
+        "displayOperationId": True,  # Display operationId in operations
+        # Appearance and Branding (mostly defaults)
+        # Sorting and Filtering (mostly defaults)
+        "filter": True,  # Show filtering {true, false, string}
+        "operationsSorter": "alpha",  # Sort by method {alpha, method, ordered}
+        "tagsSorter": "alpha",  # Sort by tag {alpha, order}
+        "withCredentials": False,  # Avoid unless necessary
+        "displayRequestDuration": True,  # Display request duration
+        # Advanced Options (mostly defaults)
+        "syntaxHighlight.activated": True,  # Syntax highlighter flag
+        "url": "/api/schema/",  # URL to fetch the OpenAPI schema from
+    },
+    # OTHER SPECTACULAR SETTINGS
 }
 # Your stuff...
 # ------------------------------------------------------------------------------
