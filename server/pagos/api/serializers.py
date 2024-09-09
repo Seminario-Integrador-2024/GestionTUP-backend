@@ -16,7 +16,7 @@ class CompromisoDePagoSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if obj.archivo_pdf:
             # Genera la URL completa al archivo PDF
-            url = reverse('compromisodepago-retrieve-pdf', args=[obj.pk])
+            url = reverse('pagos:retrieve-pdf', args=[obj.pk])
             if request is not None:
                 return request.build_absolute_uri(url)
             else:
