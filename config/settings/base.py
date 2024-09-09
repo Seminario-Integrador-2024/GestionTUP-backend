@@ -84,6 +84,9 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "server.users",
+    "server.alumnos",
+    "server.materias",
+    "server.pagos",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
