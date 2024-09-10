@@ -1,6 +1,7 @@
 # ruff: noqa: ERA001, E501
 """Base settings to build other settings files upon."""
 
+import datetime
 from pathlib import Path
 
 import environ
@@ -298,6 +299,21 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# djangorestframework-simplejwt
+# -------------------------------------------------------------------------------
+# djangorestframework-simplejwt - https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": env.int(
+        "DJANGO_ACCESS_TOKEN_LIFE",
+        default=datetime.timedelta(minutes=5),
+    ),
+    "REFRESH_TOKEN_LIFETIME": env.int(
+        "DJANGO_REFRESH_TOKEN_LIFE",
+        default=datetime.timedelta(days=1),
+    ),
+    "USER_ID_FIELD": "dni",
 }
 
 # dj-rest-auth
