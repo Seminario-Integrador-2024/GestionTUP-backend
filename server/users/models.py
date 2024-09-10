@@ -18,14 +18,25 @@ class User(AbstractUser):
     """
 
     # First and last name do not cover name patterns around the globe
-    name = CharField(_("Full Name of User"), blank=False, max_length=255)
-    first_name = CharField(_("first name"), blank=True, max_length=150)
-    last_name = CharField(_("last name"), blank=True, max_length=150)
-    email = EmailField(_("email address"), unique=True)
+    dni = PositiveIntegerField(
+        _("DNI"),
+        primary_key=True,
+        null=False,
+        blank=False,
+        default=0,
+    )
+    full_name = CharField(
+        _("Full Name of User"),
+        blank=True,
+        max_length=150,
+        default="NonName",
+    )
+    first_name = None
+    last_name = None
+    email = EmailField(_("email address"), default="")
     username = None  # type: ignore[assignment]
-    dni = PositiveIntegerField(_("DNI"), unique=True, blank=False, default=0)
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    USERNAME_FIELD = "dni"
+    REQUIRED_FIELDS = ["email"]
     objects: ClassVar[UserManager] = UserManager()
 
     def __str__(self) -> str:

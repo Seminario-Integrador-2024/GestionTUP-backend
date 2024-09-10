@@ -33,12 +33,16 @@ class Alumno(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
+        to_field="dni",
+        default=0,
+        primary_key=True,
     )
     estado = models.CharField(max_length=255)
     legajo = models.PositiveIntegerField(_("Legajo"), unique=True, default=0)
     anio_ingreso = models.IntegerField()
-    telefono = models.IntegerField(blank=True, null=True)
-    celular = models.IntegerField(blank=True, null=True)
+    telefono = models.CharField(blank=True)
+    tel_res = models.CharField(blank=True)
+    celular = models.CharField(blank=True)
     gender = models.CharField(
         max_length=1,
         choices=(("M", "male"), ("F", "female")),
