@@ -1,13 +1,15 @@
 # core/models/modelo_alumno.py
 
 # django imports
-from django.conf import settings
+
 from django.contrib.auth.models import Group
 from django.db import models
 from django.db.models.signals import post_save
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
+
+from server.users.models import User
 
 # Create your models here.
 
@@ -29,7 +31,7 @@ class Alumno(models.Model):
     """
 
     user = models.OneToOneField(
-        to=settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
     )
     estado = models.CharField(max_length=255)
@@ -82,13 +84,11 @@ def alumno_post_save(sender, instance, created, **kwargs):
         **kwargs: Arbitrary keyword arguments.
     """
     if created:
-        group, created = Group.objects.get_or_create(
-            name="Alumnos",
-        )  # create the group if it doesn't exist
-        if not instance.user.groups.filter(name="Alumnos").exists():
-            instance.user.groups.add("Alumnos")
-        # set user permissions for the Alumnos group
-        group.add_to_class("permissions", instance.user.user_permissions.all())
+        try:
+            Group.objects.get(name="Alumnos")
+        except Group.DoesNotExist:
+            Group.objects.create(name="Alumnos")
+        instance.user.groups.add(Group.objects.get(name="Alumnos"))
 
 
 @receiver(pre_delete, sender=Alumno)
