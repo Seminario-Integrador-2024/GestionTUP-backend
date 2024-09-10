@@ -63,7 +63,7 @@ DJANGO_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
-    "django.contrib.sites",
+    # "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # "django.contrib.humanize", # Handy template tags
@@ -80,6 +80,7 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "corsheaders",
     "drf_spectacular",
+    "dj_rest_auth",
 ]
 
 LOCAL_APPS = [
@@ -276,7 +277,7 @@ ACCOUNT_USERNAME_REQUIRED = False
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_ADAPTER = "server.users.adapters.AccountAdapter"
 # https://docs.allauth.org/en/latest/account/forms.html
@@ -296,6 +297,22 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# dj-rest-auth
+# -------------------------------------------------------------------------------
+# dj-rest-auth - https://dj-rest-auth.readthedocs.io/en/latest/configuration.html
+REST_AUTH = {
+    "LOGIN_SERIALIZER": "server.users.api.serializers.LoginSerializer",
+    "USER_DETAILS_SERIALIZER": "server.users.api.serializers.UserDetailsSerializer",
+    "USE_JWT": True,
+    "TOKEN_MODEL": None,
+    # "SESSION_LOGIN": False,
+    "JWT_AUTH_SECURE": False,  # if true, JWT will be set with secure flag and only sent over https
+    "JWT_AUTH_COOKIE": "access_token",
+    "JWT_AUTH_COOKIE_REFRESH": "refresh_token",
+    "JWT_AUTH_COOKIE_USE_CSRF": True,  # forces to use CSRF token in the cookie
+    "JWT_AUTH_RETURN_EXPIRATION": True,
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
@@ -345,6 +362,7 @@ SPECTACULAR_SETTINGS = {
             },
         },
     ],
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "COMPONENT_SPLIT_REQUEST": True,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "SWAGGER_UI_SETTINGS": {  # Swagger UI settings

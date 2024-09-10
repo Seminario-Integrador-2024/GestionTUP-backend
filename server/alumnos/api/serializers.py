@@ -1,42 +1,50 @@
-from django.core.files.base import ContentFile
-from django.urls import reverse
-
-
 #  third party imports
+
 from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_field
+
+from server.alumnos.models import Alumno
 
 #  custom imports
-from ..models import *
+from server.alumnos.models import Inhabilitacion
+from server.alumnos.models import TipoEstado
+from server.alumnos.models import TipoInhabilitacion
+from server.users.api.serializers import UserCreateSerializer
+from server.users.models import User
+
 
 class AlumnoRetrieveSerializer(serializers.ModelSerializer):
     alumno_link = serializers.SerializerMethodField()
 
     class Meta:
         model = Alumno
-        exclude = ['telefono', 'celular', 'user', "id"]
-    
+        exclude = ["telefono", "celular"]
+        lookup_field = "dni"
 
     def get_alumno_link(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         if request is not None:
-            base_url = request.build_absolute_uri('/')
-            if obj.dni:
-                return f"{base_url}alumnos/{obj.dni}/"
+            base_url = request.build_absolute_uri("/")
+            if obj.user.dni:
+                return f"{base_url}alumnos/{obj.user.dni}/"
         return None
 
-class AlumnoCreateSerializer(serializers.ModelSerializer):
-    email = serializers.SerializerMethodField()
-    
+
+class AlumnoCreateSerializer(serializers.ModelSerializer[Alumno]):
+    user = UserCreateSerializer(required=True, many=False, allow_null=False)
+
     class Meta:
         model = Alumno
         fields = "__all__"
 
-    def get_email(self,obj):
-        user_email = obj.user
-        if user_email is not None:
-            return user_email.email
-        return None
+    def create(self, validated_data) -> Alumno:
+        user_data = validated_data.pop("user")
+        # create user instance
+        user_instance = User.objects.create_user(**user_data)
+        user_instance.set_password(user_data.get("password"))
+        user_instance.save()
+        # create alumno instance and link it to user
+        return Alumno.objects.create(user=user_instance, **validated_data)
+
 
 class InhabilitacionSerializer(serializers.ModelSerializer):
     class Meta:

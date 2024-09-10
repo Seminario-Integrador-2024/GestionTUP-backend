@@ -8,19 +8,20 @@ from rest_framework.viewsets import GenericViewSet
 
 from server.users.models import User
 
-from .serializers import UserSerializer
+from .serializers import UserViewSetSerializer
 
 
-class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericViewSet):
-    serializer_class = UserSerializer
+class UsersViewSet(
+    RetrieveModelMixin,
+    ListModelMixin,
+    UpdateModelMixin,
+    GenericViewSet,
+):
+    serializer_class = UserViewSetSerializer
     queryset = User.objects.all()
     lookup_field = "pk"
 
-    def get_queryset(self, *args, **kwargs):
-        assert isinstance(self.request.user.id, int)
-        return self.queryset.filter(id=self.request.user.id)
-
     @action(detail=False)
     def me(self, request):
-        serializer = UserSerializer(request.user, context={"request": request})
+        serializer = UserViewSetSerializer(request.user, context={"request": request})
         return Response(status=status.HTTP_200_OK, data=serializer.data)

@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from server.alumnos.models import Alumno
+
+# Register the model in the admin site
+admin.site.register(Alumno)

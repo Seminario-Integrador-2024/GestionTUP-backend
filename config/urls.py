@@ -9,27 +9,19 @@ from django.views import defaults as default_views
 from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularSwaggerView
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-)
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
-    path(
-        "about/",
-        TemplateView.as_view(template_name="pages/about.html"),
-        name="about",
-    ),
+    # path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
+    # path(
+    #     "about/",
+    #     TemplateView.as_view(template_name="pages/about.html"),
+    #     name="about",
+    # ),
     # Django Admin, use {% url 'admin:index' %}
     path(settings.ADMIN_URL, admin.site.urls),
     # User management
-    path("users/", include("server.users.urls", namespace="users")),
-    path("alumnos/", include("server.alumnos.urls", namespace="alumnos")),
-    path("materias/", include("server.materias.urls", namespace="materias")),
-    path("pagos/", include("server.pagos.urls", namespace="pagos")),
-    path("accounts/", include("allauth.urls")),
+    # path("users/", include("server.users.urls", namespace="users")),
+    # path("accounts/", include("allauth.urls")),
     # Your stuff: custom urls includes go here
     # ...
     # Media files
@@ -43,17 +35,19 @@ if settings.DEBUG:
 urlpatterns += [
     # API base url
     path("api/", include("config.api_router")),
-    # DRF auth token
-    path("api/auth-token/", TokenObtainPairView.as_view(), name="auth-token"),
-    path(
-        "api/auth-token/refresh/", TokenRefreshView.as_view(), name="auth-token-refresh"
-    ),
-    path("api/auth-token/verify/", TokenVerifyView.as_view(), name="auth-token-verify"),
+    # DRF Spectacular API schema and documentation
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
     path(
         "api/docs/",
         SpectacularSwaggerView.as_view(url_name="api-schema"),
         name="api-docs",
+    ),
+    # 3th party API endpoints
+    # dj-rest-auth
+    path(
+        "api/auth/",
+        include("dj_rest_auth.urls"),
+        name="dj-rest-auth",
     ),
 ]
 
