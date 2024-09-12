@@ -25,8 +25,7 @@ class UserCreateSerializer(serializers.ModelSerializer[User]):
         fields = (
             "email",
             "password",
-            "first_name",
-            "last_name",
+            "full_name",
             "dni",
         )
         extra_kwargs = {
