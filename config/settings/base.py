@@ -326,7 +326,7 @@ REST_AUTH = {
     "USER_DETAILS_SERIALIZER": "server.users.api.serializers.UserDetailsSerializer",
     "USE_JWT": True,
     "TOKEN_MODEL": None,
-    # "SESSION_LOGIN": False,
+    "SESSION_LOGIN": True,
     "JWT_AUTH_SECURE": False,  # if true, JWT will be set with secure flag and only sent over https
     "JWT_AUTH_COOKIE": "access_token",
     "JWT_AUTH_COOKIE_REFRESH": "refresh_token",
