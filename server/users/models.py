@@ -1,9 +1,9 @@
-from typing import ClassVar
-
 from django.contrib.auth.models import AbstractUser
 from django.db.models import CharField
 from django.db.models import EmailField
 from django.db.models import PositiveIntegerField
+from django.dispatch import receiver
+from django.db.models.signals import post_migrate
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -37,7 +37,14 @@ class User(AbstractUser):
     username = None  # type: ignore[assignment]
     USERNAME_FIELD = "dni"
     REQUIRED_FIELDS = ["email"]
-    objects: ClassVar[UserManager] = UserManager()
+    objects = (
+        UserManager()
+    )  # this is the ORM manager. you can use it to query the database.
+    # some examples are:
+    # User.objects.all() -> returns all users
+    # User.objects.get(dni=12345678) -> returns the user with dni 12345678
+    # User.objects.filter(email="example@example.com") -> returns
+    # all users with matched email
 
     def __str__(self) -> str:
         return self.email
@@ -49,4 +56,12 @@ class User(AbstractUser):
             str: URL for user detail.
 
         """
-        return reverse("users:detail", kwargs={"pk": self.id})
+        return reverse("users:detail", kwargs={"pk": self.dni})
+
+
+@receiver(signal=[post_migrate])
+def post_migrate_create_superuser(sender, **kwargs):
+    if not User.objects.filter(is_superuser=True).exists():
+        User.objects.create_superuser(
+            dni=12345678, email="admin@admin.com", password="admin"
+        )
