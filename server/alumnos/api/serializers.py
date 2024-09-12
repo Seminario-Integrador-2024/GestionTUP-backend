@@ -17,7 +17,7 @@ class AlumnoRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Alumno
-        exclude = ["telefono", "celular"]
+        fields = "__all__"
         lookup_field = "dni"
 
     def get_alumno_link(self, obj):
