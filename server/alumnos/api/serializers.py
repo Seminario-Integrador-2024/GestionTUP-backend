@@ -14,10 +14,10 @@ from server.users.models import User
 
 class AlumnoRetrieveSerializer(serializers.ModelSerializer):
     alumno_link = serializers.SerializerMethodField()
-
     class Meta:
         model = Alumno
-        fields = "__all__"
+        # fields = "__all__"
+        exclude = ["user"]
         lookup_field = "dni"
 
     def get_alumno_link(self, obj):
