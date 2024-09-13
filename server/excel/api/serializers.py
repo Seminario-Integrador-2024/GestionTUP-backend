@@ -79,8 +79,6 @@ class ExcelCreateSerializer(ModelSerializer):
                 detail=result.to_dict(), code="invalid_excel_contents"
             )
         # Check for duplicates
-        else:
-            raise ValidationError("No data to load", code="no_data_to_load")
         columns_filter = ["Documento", "Materia", "Año"]
         duplicates = excel_as_df[
             excel_as_df.duplicated(subset=columns_filter, keep="last")
