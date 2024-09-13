@@ -1,28 +1,33 @@
 import pandas as pd
-from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
-
+from rest_framework.serializers import ModelSerializer, ValidationError
+from rest_framework.response import Response
+from rest_framework import status
 from server.excel.models import Excel
-from server.excel.utils import _get_invalids
 from server.excel.utils import load_data
 from server.excel.utils import validate_excel_file
+
+
+class ExcelInvalidContentValidationError(ValidationError):
+    status_code = status.HTTP_412_PRECONDITION_FAILED
+    default_code = "invalid_excel_contents"
 
 
 class ExcelCreateSerializer(ModelSerializer):
     class Meta:
         model = Excel
-        fields = ("excel",)
+        # fields = ("excel",)
+        fields = "__all__"
 
     def validate_excel(self, value):
         allowed_extensions = ["xlsx", "xls"]
         if not value.name.endswith(tuple(allowed_extensions)):
             msg = f"File extension not allowed. Allowed extensions: \
                 {', '.join(allowed_extensions)}"
-            raise serializers.ValidationError(msg, code="invalid_file_extension")
+            raise ValidationError(msg, code="invalid_file_extension")
 
         try:
             col_header = 6
-            excel_as_df = pd.read_excel(
+            excel_as_df: pd.DataFrame = pd.read_excel(
                 io=value,
                 header=col_header - 1,
                 names=[
@@ -58,7 +63,7 @@ class ExcelCreateSerializer(ModelSerializer):
             )
         except ValueError as e:
             msg = f"Invalid Excel file: {e!s}"
-            raise serializers.ValidationError(
+            raise ValidationError(
                 msg,
                 code="invalid_excel_file",
             ) from e
@@ -66,17 +71,16 @@ class ExcelCreateSerializer(ModelSerializer):
         excel_as_df.index = excel_as_df.index + col_header + 1
 
         # Validate Excel file format and return invalid rows
-        try:
-            result = validate_excel_file(excel_as_df)
-            invalid_rows: pd.DataFrame = _get_invalids(result)
-        except ValueError:
-            msg = f"{invalid_rows.to_dict(orient='index')}"
-            raise serializers.ValidationError(
-                msg,
-                code="invalid_excel_format",
-            ) from None
 
+        result = validate_excel_file(excel_as_df)
+
+        if not result.empty or result is not None:
+            raise ExcelInvalidContentValidationError(
+                detail=result.to_dict(), code="invalid_excel_contents"
+            )
         # Check for duplicates
+        else:
+            raise ValidationError("No data to load", code="no_data_to_load")
         columns_filter = ["Documento", "Materia", "Año"]
         duplicates = excel_as_df[
             excel_as_df.duplicated(subset=columns_filter, keep="last")
@@ -93,10 +97,16 @@ class ExcelCreateSerializer(ModelSerializer):
         load_data(excel_as_df)
 
         if duplicates.empty:
-            self.context["message"] = "Data successfully loaded without duplicates"
+            self.context["message"] = (
+                "Data successfully loaded\
+                without duplicates"
+            )
         else:
-            self.context["message"] = "Data loaded successfully. \
-                    Duplicate rows were identified and not added to the database."
+            self.context["message"] = (
+                "Data loaded successfully. \
+                    Duplicate rows were identified\
+                        and not added to the database."
+            )
 
         return value
 

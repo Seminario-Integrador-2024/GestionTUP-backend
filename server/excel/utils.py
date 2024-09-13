@@ -39,21 +39,12 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 from django.db import transaction
-from rest_framework import serializers
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
 # functions definitions
-def _get_invalids(invalid_rows: pd.DataFrame) -> pd.DataFrame:
-    if not invalid_rows.empty:
-        rows = invalid_rows.to_dict(orient="index")
-        raise serializers.ValidationError(
-            {"invalid_rows": rows},
-            code="invalid_excel_content",
-        )
-    return invalid_rows
 
 
 def validate_excel_file(data: pd.DataFrame) -> pd.DataFrame:
@@ -134,32 +125,25 @@ def validate_excel_file(data: pd.DataFrame) -> pd.DataFrame:
         return errors
 
     invalid_rows = data.apply(
-        validate_row,
-        axis=1,
+        validate_row, axis=1
     )  # Apply the validation to each row and store the errors
-    invalid_rows = (
-        # Convert the errors to a DataFrame
+    invalid_rows = (  # Convert the errors to a DataFrame with the column names and row numbers
         pd.DataFrame(
-            invalid_rows.tolist(),
-            # Convert the list of dictionaries to a list of lists
+            invalid_rows.tolist()  # Convert the list of dictionaries to a list of lists
         )  # Convert the list of dictionaries to a DataFrame
-        .melt()  # Stack the columns to get a multi-index DataFrame
+        .stack()  # Stack the columns to get a multi-index DataFrame
         .reset_index(
-            level=1,
-        )
-        # Reset the index to get the row index as a column
+            level=1
+        )  # Reset the index to get the column names as a column instead of the index
         .rename(columns={0: "row"})  # Rename the column to "row"
     )  # Convert the multi-index DataFrame to a single-index DataFrame
     invalid_rows.columns = [
         "columna",
         "error_en_fila",
     ]
-    return invalid_rows.pivot_table(
-        index="error_en_fila",
-        columns="columna",
-        values="columna",
+    return invalid_rows.pivot(
+        index="error_en_fila", columns="columna", values="columna"
     )
-
 
 # cargar archivo sysacad xls en la bbdd
 
@@ -178,16 +162,8 @@ def load_data(data: pd.DataFrame):
     from server.users.models import User
 
     # sanitize the data
-    for _, row in data.iterrows():
-        row["Mail"] = "" if pd.isna(row["Mail"]) else str(row["Mail"]).strip()
-        row["Celular"] = "" if pd.isna(row["Celular"]) else str(row["Celular"]).strip()
-        row["Teléfono"] = (
-            "" if pd.isna(row["Teléfono"]) else str(row["Teléfono"]).strip()
-        )
-        row["Tel. Resid"] = (
-            "" if pd.isna(row["Tel. Resid"]) else str(row["Tel. Resid"]).strip()
-        )
-
+    # for _, row in data.iterrows():
+    #     pass
     # iterate over the rows
     for _, row in data.iterrows():
         # if create use Model.objets.create()
@@ -238,20 +214,11 @@ def load_data(data: pd.DataFrame):
 if __name__ == "__main__":
     # Call the main function
 
-    from pathlib import Path
-    from tkinter import filedialog as fd
-
-    # get file by filedialog, http post or other method
-    path: str = fd.askopenfilename(
-        title="Elija Archivo excel a validar",
-        initialdir=Path().home(),
-        filetypes=(("Excel files", "*.xls *.xlsx"), ("all files", "*.*")),
-    )
-
     # read the file
     COL_HEADER = 6  # header row with column names in the excel file
     df: pd.DataFrame = pd.read_excel(
-        io=path,
+        # io=path,
+        io="../../../../../../Downloads/Cursantes 2 cuatrimestre.xlsx",
         names=[
             "Extensión",
             "Esp.",
@@ -287,3 +254,6 @@ if __name__ == "__main__":
     df.index = df.index + COL_HEADER + 1
     result: pd.DataFrame = validate_excel_file(df)
     # do something with result
+    print(result.to_dict(orient="index"))
+    print("\n\n\n\n")
+    print(result)
