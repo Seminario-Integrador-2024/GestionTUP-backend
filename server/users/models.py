@@ -65,3 +65,6 @@ def post_migrate_create_superuser(sender, **kwargs):
         User.objects.create_superuser(
             dni=12345678, email="admin@admin.com", password="admin"
         )
+        User.objects.create_user(
+            dni=12345679, email="alumno@alumno.com", password="alumno"
+        )
