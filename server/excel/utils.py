@@ -170,7 +170,7 @@ def load_data(data: pd.DataFrame):
     # sanitize the data
 
     # iterate over the rows, create the instances and save them
-    for _, row in data.dropna().iterrows():
+    for _, row in data.iterrows():
         # 36770618
         # if create use Model.objets.create()
         # if create or update use Model() and then Model.save()
