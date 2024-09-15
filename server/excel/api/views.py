@@ -32,6 +32,8 @@ class ExcelViewSet(
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        # if request.context["duplicated"]:
-        #     return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
-        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+        # check for context from serializer
+        status_code = status.HTTP_200_OK
+        if serializer.context.get("duplicates"):
+            status_code = status.HTTP_206_PARTIAL_CONTENT
+        return Response(serializer.data, status=status_code, headers=headers)

@@ -100,7 +100,7 @@ class ExcelCreateSerializer(ModelSerializer):
                 subset=columns_filter,
                 keep="last",
             )
-            self.context["duplicates"] = duplicates.to_dict(orient="index")
+            self.context["duplicates"] = duplicates.shape[0]
 
         # Load data to the database
         load_data(excel_as_df)
@@ -110,18 +110,21 @@ class ExcelCreateSerializer(ModelSerializer):
                 "Data successfully successfully loaded without duplicates"
             )
         else:
+            tot_dup = duplicates.shape[0]
+            self.context["amount"] = tot_dup
             self.context["message"] = (
-                "Data loaded successfully. \
-                    Duplicate rows were identified and not added to the database."
+                "Data loaded successfully. Duplicate rows were identified and not added to the database."
             )
-        return None
+        self.context["total"] = excel_as_df.shape[0]
+        return value
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        if "duplicates" in self.context:
-            ret["duplicates"] = self.context["duplicates"]
+        if "amount" in self.context:
+            ret["duplicates"] = self.context["amount"]
         if "message" in self.context:
             ret["message"] = self.context["message"]
+            ret["total"] = self.context["total"]
         return ret
 
 
