@@ -168,23 +168,24 @@ def load_data(data: pd.DataFrame):
     from server.users.models import User
 
     # sanitize the data
-    for _, row in data.iterrows():
-        row["Mail"] = "" if pd.isna(row["Mail"]) else str(row["Mail"]).strip()
-        row["Celular"] = "" if pd.isna(row["Celular"]) else str(row["Celular"]).strip()
-        row["Teléfono"] = (
-            "" if pd.isna(row["Teléfono"]) else str(row["Teléfono"]).strip()
-        )
-        row["Tel. Resid"] = (
-            "" if pd.isna(row["Tel. Resid"]) else str(row["Tel. Resid"]).strip()
-        )
 
-    # iterate over the rows
-    for _, row in data.iterrows():
+    # iterate over the rows, create the instances and save them
+    for _, row in data.dropna().iterrows():
+        # 36770618
         # if create use Model.objets.create()
         # if create or update use Model() and then Model.save()
         # create the Alumno instance
         # add onetone user field
-
+        if pd.isna(row["Teléfono"]):
+            row["Teléfono"] = 0
+        if pd.isna(row["Tel. Resid"]):
+            row["Tel. Resid"] = 0
+        if pd.isna(row["Celular"]):
+            row["Celular"] = 0
+        if row["Celular"].is_float():
+            row["Celular"] = str(int(row["Celular"]))
+        if pd.isna(row["Mail"]):
+            row["Mail"] = ""
         alumno = Alumno(
             user=User(
                 dni=row["Documento"],
@@ -234,7 +235,7 @@ if __name__ == "__main__":
     # get file by filedialog, http post or other method
     path: str = fd.askopenfilename(
         title="Elija Archivo excel a validar",
-        initialdir=Path().home(),
+        initialdir=Path().home() / "Downloads",
         filetypes=(("Excel files", "*.xls *.xlsx"), ("all files", "*.*")),
     )
 
@@ -275,6 +276,6 @@ if __name__ == "__main__":
     )
     # make index start at 6
     df.index = df.index + COL_HEADER + 1
-    result: dict = validate_excel(df)
+    # result: dict = validate_excel(df)
     # do something with result
-    print(result)
+    print(df.iloc[0:20, 10:17].head(20))

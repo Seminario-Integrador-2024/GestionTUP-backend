@@ -1,7 +1,6 @@
 import pandas as pd
-from rest_framework import status
 from rest_framework.serializers import ModelSerializer
-from rest_framework.exceptions import ValidationError, NotAcceptable, ParseError
+from rest_framework.exceptions import ValidationError, ParseError
 from server.excel.models import Excel
 from server.excel.utils import load_data
 from server.excel.utils import validate_excel
@@ -107,13 +106,14 @@ class ExcelCreateSerializer(ModelSerializer):
 
         if duplicates.empty:
             self.context["message"] = (
-                "Data successfully successfully loaded without duplicates"
+                "Data and Excel successfully loaded without duplicates"
             )
         else:
             tot_dup = duplicates.shape[0]
             self.context["amount"] = tot_dup
             self.context["message"] = (
-                "Data loaded successfully. Duplicate rows were identified and not added to the database."
+                "Data and Excel loaded successfully. Duplicate rows were\
+                    identified and not added to the database."
             )
         self.context["total"] = excel_as_df.shape[0]
         return value
