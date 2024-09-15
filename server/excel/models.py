@@ -1,9 +1,9 @@
 from venv import logger
-
+from datetime import datetime
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models.signals import pre_delete
-from django.db.models.signals import pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
@@ -29,15 +29,13 @@ class Excel(models.Model):
         return self.excel.name
 
 
-@receiver([pre_save], sender=Excel)
-def excel_pre_save(sender, instance, **kwargs):
+@receiver([post_save], sender=Excel)
+def excel_post_save(sender, instance, **kwargs):
     if instance.excel:
-        logger.info(
-            f"Excel {instance.excel.name} is about to be saved as \
-                {instance.uploaded_at}.xlsx",
-        )
-    # rename the file
-    instance.excel.name = f"{instance.uploaded_at}.xlsx"
+        # set the filename to the uploaded_at timestamp
+        instance.excel.name = f"\
+            {datetime.today().strftime('%Y-%m-%d %H:%M:%S')}.\
+                {instance.excel.name.split('.')[-1]}"
 
 
 @receiver([pre_delete], sender=Excel)

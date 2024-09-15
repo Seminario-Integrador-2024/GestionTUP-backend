@@ -14,8 +14,8 @@ from server.users.models import User
 
 class AlumnoRetrieveSerializer(serializers.ModelSerializer):
     alumno_link = serializers.SerializerMethodField()
-    dni = serializers.CharField(source="user.dni", read_only=True)
-    email = serializers.CharField(source="user.email", read_only=True)
+    dni = serializers.IntegerField(source="user.dni", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
     full_name = serializers.CharField(source="user.full_name", read_only=True)
     class Meta:
         model = Alumno

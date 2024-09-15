@@ -36,27 +36,18 @@ B. cargar archivo sysacad xls en la bbdd
 
 import re
 from typing import TYPE_CHECKING
-
+import json
 import pandas as pd
 from django.db import transaction
-from rest_framework import serializers
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
 # functions definitions
-def _get_invalids(invalid_rows: pd.DataFrame) -> pd.DataFrame:
-    if not invalid_rows.empty:
-        rows = invalid_rows.to_dict(orient="index")
-        raise serializers.ValidationError(
-            {"invalid_rows": rows},
-            code="invalid_excel_content",
-        )
-    return invalid_rows
 
 
-def validate_excel_file(data: pd.DataFrame) -> pd.DataFrame:
+def validate_excel(data: pd.DataFrame) -> dict:
     """
     Validates the data in a DataFrame against a set lambda functions.
 
@@ -96,7 +87,7 @@ def validate_excel_file(data: pd.DataFrame) -> pd.DataFrame:
             re.match(
                 regex_ap_no,
                 str(x),
-            ),
+            )
         ),
         "Comisión": lambda x: bool(re.compile(regex_comision).match(str(x))),
         "Materia": lambda x: bool(re.compile(regex_materia).match(str(x))),
@@ -104,7 +95,7 @@ def validate_excel_file(data: pd.DataFrame) -> pd.DataFrame:
             re.match(
                 regex_no_ma,
                 str(x),
-            ),
+            )
         ),
         "Estado": lambda x: bool(re.compile(regex_estado).match(str(x))),
         "Recursa": lambda x: bool(re.compile(regex_recursa).match(str(x))),
@@ -134,31 +125,30 @@ def validate_excel_file(data: pd.DataFrame) -> pd.DataFrame:
         return errors
 
     invalid_rows = data.apply(
-        validate_row,
-        axis=1,
+        validate_row, axis=1
     )  # Apply the validation to each row and store the errors
-    invalid_rows = (
-        # Convert the errors to a DataFrame
+    invalid_rows = (  # Convert the
+        # errors to a DataFrame with the column names and row numbers
         pd.DataFrame(
-            invalid_rows.tolist(),
-            # Convert the list of dictionaries to a list of lists
+            invalid_rows.tolist()  # Convert
+            # the list of dictionaries to a list of lists
         )  # Convert the list of dictionaries to a DataFrame
-        .melt()  # Stack the columns to get a multi-index DataFrame
-        .reset_index(
-            level=1,
-        )
-        # Reset the index to get the row index as a column
+        .stack()  # Stack the columns to get a multi-index DataFrame
+        .reset_index(level=1)  # Reset the index to get the
+        # column names as a column instead of the index
         .rename(columns={0: "row"})  # Rename the column to "row"
     )  # Convert the multi-index DataFrame to a single-index DataFrame
     invalid_rows.columns = [
         "columna",
         "error_en_fila",
     ]
-    return invalid_rows.pivot_table(
-        index="error_en_fila",
-        columns="columna",
-        values="columna",
+    # Convert the DataFrame to a dictionary for JSON serialization
+    my_dict: dict = json.loads(
+        invalid_rows.pivot(
+            index="error_en_fila", columns="columna", values="columna"
+        ).to_json(orient="index")
     )
+    return my_dict
 
 
 # cargar archivo sysacad xls en la bbdd
@@ -285,5 +275,6 @@ if __name__ == "__main__":
     )
     # make index start at 6
     df.index = df.index + COL_HEADER + 1
-    result: pd.DataFrame = validate_excel_file(df)
+    result: dict = validate_excel(df)
     # do something with result
+    print(result)

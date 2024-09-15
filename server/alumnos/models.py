@@ -4,7 +4,7 @@
 
 from django.contrib.auth.models import Group
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
@@ -76,10 +76,10 @@ class Alumno(models.Model):
         return self.user.dni
 
 
-@receiver([post_save], sender=Alumno)
-def alumno_post_save(sender, instance, created, **kwargs):
+@receiver([pre_save], sender=Alumno)
+def alumno_pre_save(sender, instance, **kwargs):
     """
-    alumno_post_save add alumno to Alumnos group.
+    alumno_pre_save add alumno to Alumnos group.
 
     Args:
         sender (Alumno): The Alumno model.
@@ -87,12 +87,11 @@ def alumno_post_save(sender, instance, created, **kwargs):
         created (bool): True if the instance was created, False otherwise.
         **kwargs: Arbitrary keyword arguments.
     """
-    if created:
-        try:
-            Group.objects.get(name="Alumnos")
-        except Group.DoesNotExist:
-            Group.objects.create(name="Alumnos")
-        instance.user.groups.add(Group.objects.get(name="Alumnos"))
+    try:
+        Group.objects.get(name="Alumnos")
+    except Group.DoesNotExist:
+        Group.objects.create(name="Alumnos")
+    instance.user.groups.add(Group.objects.get(name="Alumnos"))
 
 
 @receiver(pre_delete, sender=Alumno)
