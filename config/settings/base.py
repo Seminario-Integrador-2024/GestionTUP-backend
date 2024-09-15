@@ -1,6 +1,7 @@
 # ruff: noqa: ERA001, E501
 """Base settings to build other settings files upon."""
-
+# classy drf docs
+# https://www.cdrf.co/
 import datetime
 from pathlib import Path
 
