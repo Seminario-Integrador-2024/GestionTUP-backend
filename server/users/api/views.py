@@ -8,8 +8,9 @@ from rest_framework.viewsets import GenericViewSet
 
 from server.users.models import User
 
-from .serializers import UserViewSetSerializer
+# from .serializers import UserViewSetSerializer
 
+from .serializers import UserDetailsSerializer
 
 class UsersViewSet(
     RetrieveModelMixin,
@@ -17,7 +18,9 @@ class UsersViewSet(
     UpdateModelMixin,
     GenericViewSet,
 ):
-    serializer_class = UserViewSetSerializer
+    # serializer_class = UserViewSetSerializer
+    serializer_class = UserDetailsSerializer
+
     queryset = User.objects.all()
     lookup_field = "pk"
 
