@@ -8,26 +8,27 @@ from .api.views import CuotaViewSet
 from .api.views import FirmarCompromisoView
 from .api.views import FirmasDeUnAlumnoView
 from .api.views import PagoViewSet
-from .api.views import UltimoCompromisoDePago
+from .api.views import UltimoCompromisoDePagoViewSet
 
 router = DefaultRouter()
-router.register(r"compromisos", CompromisoDePagoViewSet)
-router.register(r"pagos", PagoViewSet)
-router.register(r"cuotas", CuotaViewSet)
-
+"""router.register(r"compromisos", CompromisoDePagoViewSet, basename="compromisos")
+router.register(r"pagos", PagoViewSet, basename="pagos")
+router.register(r"cuotas", CuotaViewSet, basename="cuotas")
+"""
 
 app_name = "pagos"
+
 urlpatterns = [
     path("", include(router.urls)),
     path(
         "compromisos/archivo/<int:pk>/",
         CompromisoDePagoViewSet.as_view({"get": "retrieve_pdf"}),
-        name="retrieve_pdf",
+        name="retrieve-pdf",
     ),
     path(
         "ultimo-compr-de-pag/",
-        UltimoCompromisoDePago.as_view(),
-        name="ultimo-compromiso-de-pago",
+        UltimoCompromisoDePagoViewSet.as_view(),
+        name ="ultimo-compromiso-de-pago",
     ),
     path(
         "firmas-de-alumno/<int:alumno_id>/",

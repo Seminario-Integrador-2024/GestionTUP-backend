@@ -30,7 +30,7 @@ def fecha_primer_vencimiento(ultimo_compromiso):
 
 
 def cargar_matricula_anual(alumno_id,ultimo_compromiso):
-    alumno = Alumno.objects.get(id=alumno_id)
+    alumno = Alumno.objects.get(user=alumno_id)
     # Verificar si ya existe una cuota de matrícula para este año
     anio_actual = timezone.now().year
     matricula_existente = Cuota.objects.filter(
@@ -59,7 +59,7 @@ def cargar_matricula_anual(alumno_id,ultimo_compromiso):
 
 
 def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
-    alumno = Alumno.objects.get(id=alumno_id)
+    alumno = Alumno.objects.get(user=alumno_id)
     anio_actual = timezone.now().year
     materias_alumno = MateriaAlumno.objects.filter(id_alumno_id=alumno_id,anio=anio_actual).count()
     cant_min_materias = 2

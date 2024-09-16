@@ -11,17 +11,23 @@ import os
 
 # third party imports
 from .serializers import *
-from ..paginations import CompDePagResultsSetPagination
+from ..paginations import *
+#utils imports
 from ..utils import generar_cuotas
 
+
 class PagoViewSet(viewsets.ModelViewSet):
-    queryset: BaseManager[Pago] = Pago.objects.all()
+    queryset = Pago.objects.all()
+    pagination_class = PagoResultsSetPagination
     serializer_class = PagoSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-class CuotaViewSet(viewsets.ModelViewSet):
-    queryset: BaseManager[Cuota] = Cuota.objects.all()
-    serializer_class = CuotaSerializer
 
     
 class CompromisoDePagoViewSet(viewsets.ModelViewSet):
@@ -53,6 +59,11 @@ class CompromisoDePagoViewSet(viewsets.ModelViewSet):
 
 #Esta vista no es usada
 class FirmaCompPagoAlumnoViewSets(viewsets.ModelViewSet):
+    queryset = FirmaCompPagoAlumno.objects.all()
+    serializer_class = FirmaCompPagoAlumnoSerializer
+    pagination_class = FirmasResultSetPagination
+
+    """    
     lookup_field = "alumno_id"
     serializer_class = FirmaCompPagoAlumnoSerializer
     queryset = FirmaCompPagoAlumno.objects.all()
@@ -75,12 +86,13 @@ class FirmaCompPagoAlumnoViewSets(viewsets.ModelViewSet):
             else:
                 #generar_cuotas(alumno_id,ultimo_compromiso)
                 return firma_ultimo_comp
+    """
             
 class FirmarCompromisoView(APIView):
 
     def post(self, request, alumno_id=None):
         ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
-        alumno= Alumno.objects.get(id=alumno_id)
+        alumno= Alumno.objects.get(user=alumno_id)
 
         if ultimo_compromiso == None:
             return Response({"detail": "No payment commitments found"}, status=status.HTTP_404_NOT_FOUND)
@@ -93,13 +105,14 @@ class FirmarCompromisoView(APIView):
 
         firma_ultimo_comp = FirmaCompPagoAlumno.objects.filter(alumno=alumno_id, compromiso_de_pago=ultimo_compromiso.id_comp_pago)    
         serializer = FirmaCompPagoAlumnoSerializer(firma_ultimo_comp, many=True)
-
+        
+        #Generar cuotas de manera automatica
         generar_cuotas(alumno_id,ultimo_compromiso)
 
         return Response(serializer.data)
 
 
-class UltimoCompromisoDePago(APIView):
+class UltimoCompromisoDePagoViewSet(APIView):
     
     def get(self, request):
         ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
@@ -127,6 +140,8 @@ class UltimoCompromisoDePago(APIView):
 
 class FirmasDeUnAlumnoView(viewsets.ViewSet):
 
+    pagination_class = FirmasResultSetPagination
+
     def list(self, request, alumno_id=None):
         firmas_comp_todas = FirmaCompPagoAlumno.objects.filter(alumno_id=alumno_id)
         ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
@@ -142,3 +157,26 @@ class FirmasDeUnAlumnoView(viewsets.ViewSet):
         
         return Response(data)
 
+class CuotaViewSet(viewsets.ModelViewSet):
+    queryset: BaseManager[Cuota] = Cuota.objects.all()
+    pagination_class = CuotasResultSetPagination
+    lookup_field = 'alumno_id'
+    serializer_class = CuotaSerializer
+
+    def list(self, request, alumno_id=None):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
+    lookup_field = 'alumno_id'
+    queryset: BaseManager[Cuota] = Cuota.objects.all()
+    serializer_class = CuotaDeUnAlumnoSerializer
+
+
+    
+
+    def list(self, request, alumno_id=None):
+        queryset = self.get_queryset().filter(alumno_id=alumno_id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
