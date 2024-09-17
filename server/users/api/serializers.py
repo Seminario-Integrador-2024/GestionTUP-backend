@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions
 from rest_framework import serializers
 from rest_framework.serializers import CharField
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from server.users.models import User
 
 
@@ -132,4 +132,3 @@ class UserDetailsSerializer(DRADetailsSerializer):
             roles.append('superuser')
 
         return roles
-

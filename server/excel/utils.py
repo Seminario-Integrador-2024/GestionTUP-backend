@@ -177,15 +177,13 @@ def load_data(data: pd.DataFrame):
         # create the Alumno instance
         # add onetone user field
         if pd.isna(row["Teléfono"]):
-            row["Teléfono"] = 0
+            row["Teléfono"] = "N/A"
         if pd.isna(row["Tel. Resid"]):
-            row["Tel. Resid"] = 0
+            row["Tel. Resid"] = "N/A"
         if pd.isna(row["Celular"]):
-            row["Celular"] = 0
-        if row["Celular"].is_float():
-            row["Celular"] = str(int(row["Celular"]))
+            row["Celular"] = "N/A"
         if pd.isna(row["Mail"]):
-            row["Mail"] = ""
+            row["Mail"] = "N/A"
         alumno = Alumno(
             user=User(
                 dni=row["Documento"],

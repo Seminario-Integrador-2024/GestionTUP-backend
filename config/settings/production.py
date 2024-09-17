@@ -14,11 +14,11 @@ load_dotenv()
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": getenv("PGDATABASE"),
-        "USER": getenv("PGUSER"),
-        "PASSWORD": getenv("PGPASSWORD"),
-        "HOST": getenv("PGHOST"),
-        "PORT": getenv("PGPORT", 5432),
+        "NAME": getenv("POSTGRES_DB"),
+        "USER": getenv("POSTGRES_USER"),
+        "PASSWORD": getenv("POSTGRES_PASSWORD"),
+        "HOST": getenv("POSTGRES_HOST"),
+        "PORT": getenv("POSTGRES_PORT", 5432),
         "OPTIONS": {
             "sslmode": "require",
         },
