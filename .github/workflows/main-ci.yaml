@@ -3,7 +3,7 @@ name: Deploy to Cloud Run
 env:
   SERVICE_NAME: cloud-run-deployment
   PROJECT_ID: '${{ secrets.GCP_PROJECT_ID }}'
-  DOCKER_IMAGE_URL: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-deployment
+  DOCKER_IMAGE_URL: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}cloud-run-deployment
 
 on:
   push:
