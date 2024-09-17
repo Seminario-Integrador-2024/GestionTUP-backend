@@ -7,11 +7,11 @@ set -o nounset
 
 
 
-if [ -z "${PGUSER}" ]; then
+if [ -z "${POSTGRES_USER}" ]; then
     base_PGimage_default_user='postgres'
-    export PGUSER="${base_PGimage_default_user}"
+    export POSTGRES_USER="${base_PGimage_default_user}"
 fi
-export DATABASE_URL="postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}"
+export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}/${POSTGRES_DB}"
 
 python << END
 import sys
@@ -25,11 +25,11 @@ start = time.time()
 while True:
     try:
         psycopg.connect(
-            dbname="${PGDATABASE}",
-            user="${PGUSER}",
-            password="${PGPASSWORD}",
-            host="${PGHOST}",
-            port="${PGPORT}",
+            dbname="${POSTGRES_DB}",
+            user="${POSTGRES_USER}",
+            password="${POSTGRES_PASSWORD}",
+            host="${POSTGRES_HOST}",
+            port="${POSTGRES_PORT}",
         )
         break
     except psycopg.OperationalError as error:

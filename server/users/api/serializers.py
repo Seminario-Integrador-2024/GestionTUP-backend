@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions
 from rest_framework import serializers
 from rest_framework.serializers import CharField
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from server.users.models import User
 
 
@@ -95,13 +95,41 @@ class LoginSerializer(DRALoginSerializer):
 
         # If required, is the email verified?
 
+        # we need specify the user is staff or not and the user is superuser or not
+
+        refresh = RefreshToken.for_user(user)
+
+        # reutrn the user and the refresh token
         attrs["user"] = user
+        attrs["refresh"] = str(refresh)
+        attrs["access"] = str(refresh.access_token)
+
+        # return the role of the user
+        refresh['is_staff'] = user.is_staff
+        refresh['is_superuser'] = user.is_superuser
+
         return attrs
 
 
 class UserDetailsSerializer(DRADetailsSerializer):
+
+    # roles es un campo personalizado que se añade a la respuesta
+    roles = serializers.SerializerMethodField()
+
     class Meta:
         extra_fields = []
         model = User
         fields = "__all__"
         read_only_fields = ("email",)
+
+    def get_roles(self, obj):
+        roles = []
+
+        # se valida si el usuario es staff o superusuario
+        if obj.is_staff:
+            roles.append('staff')
+        if obj.is_superuser:
+            roles.append('superuser')
+        # si dni usuario, se encuentra en la tabla alumnos, se añade el rol de alumno
+
+        return roles

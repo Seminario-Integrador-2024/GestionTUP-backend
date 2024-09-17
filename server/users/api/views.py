@@ -4,12 +4,14 @@ from rest_framework.mixins import ListModelMixin
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import GenericViewSet
 
 from server.users.models import User
 
 from .serializers import UserViewSetSerializer
 
+from .serializers import UserDetailsSerializer
 
 class UsersViewSet(
     RetrieveModelMixin,
@@ -18,6 +20,7 @@ class UsersViewSet(
     GenericViewSet,
 ):
     serializer_class = UserViewSetSerializer
+
     queryset = User.objects.all()
     lookup_field = "pk"
 
