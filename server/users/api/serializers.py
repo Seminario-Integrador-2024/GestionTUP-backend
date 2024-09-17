@@ -130,5 +130,6 @@ class UserDetailsSerializer(DRADetailsSerializer):
             roles.append('staff')
         if obj.is_superuser:
             roles.append('superuser')
+        # si dni usuario, se encuentra en la tabla alumnos, se añade el rol de alumno
 
         return roles
