@@ -36,7 +36,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ${{ env.DOCKER_IMAGE_URL }}:latest -f compose/production/django/Dockerfile .
+          docker build -t ${{ env.DOCKER_IMAGE_URL }}:latest -f compose/local/django/Dockerfile .
           docker push ${{ env.DOCKER_IMAGE_URL }}:latest
 
       - name: Deploy to Cloud Run
@@ -45,6 +45,6 @@ jobs:
           gcloud run deploy $SERVICE_NAME \
             --image ${{ env.DOCKER_IMAGE_URL }}:latest \
             --platform managed \
-            --region us-east1 \
+            --region us-central1 \
             --allow-unauthenticated
             
