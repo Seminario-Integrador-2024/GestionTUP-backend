@@ -15,7 +15,7 @@ class InvalidFileContents(APIException):
         detail: Invalid rows in the Excel file
     """
 
-    status_code = 412
+    status_code = 200
     default_detail = "Excel format is invalid"
     default_code = "invalid_rows"
 
