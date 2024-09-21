@@ -11,19 +11,70 @@ import os
 
 # third party imports
 from .serializers import *
-from ..paginations import CompDePagResultsSetPagination
+from ..paginations import *
+#utils imports
 from ..utils import generar_cuotas
 
 class PagoViewSet(viewsets.ModelViewSet):
-    queryset: BaseManager[Pago] = Pago.objects.all()
+    queryset : BaseManager[Pago] = Pago.objects.all()
     serializer_class = PagoSerializer
+    pagination_class = PagoResultsSetPagination
 
 
-class CuotaViewSet(viewsets.ModelViewSet):
-    queryset: BaseManager[Cuota] = Cuota.objects.all()
-    serializer_class = CuotaSerializer
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework import status
 
-    
+class PagoDeUnAlumnoRetrieveViewSet(viewsets.ModelViewSet):
+    serializer_class = PagoDeUnAlumnoRetrieveSerializer
+    pagination_class = PagoResultsSetPagination
+
+    def get_queryset(self):
+
+        return Pago.objects.all()
+
+    def list(self, request, alumno_id=None):
+        if alumno_id is None:
+            return Response({"detail": "Alumno ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filtrar los pagos por el ID del alumno
+        pagos = self.get_queryset().filter(alumno=alumno_id)
+
+        if not pagos.exists():
+            return Response({"detail": "No payments found for this student."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Aplicar paginación
+        paginator = self.pagination_class()
+        paginated_pagos = paginator.paginate_queryset(pagos, request)
+
+        # Serializar los pagos paginados
+        serializer = self.serializer_class(paginated_pagos, many=True)
+        
+        return paginator.get_paginated_response(serializer.data)
+
+
+
+
+class PagoDeUnAlumnoViewSet(APIView):
+    pagination_class = PagoResultsSetPagination
+    serializer_class = PagoDeUnAlumnoSerializer      
+
+
+    def post(self, request, alumno_id, *args, **kwargs):
+
+        pago_data = request.data  
+        serializer = self.serializer_class(data=pago_data)  
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        serializer.save()  
+
+    def get_success_headers(self, data):
+        return {}
+
 class CompromisoDePagoViewSet(viewsets.ModelViewSet):
     queryset = CompromisoDePago.objects.all()
     serializer_class = CompromisoDePagoSerializer
@@ -53,34 +104,17 @@ class CompromisoDePagoViewSet(viewsets.ModelViewSet):
 
 #Esta vista no es usada
 class FirmaCompPagoAlumnoViewSets(viewsets.ModelViewSet):
-    lookup_field = "alumno_id"
-    serializer_class = FirmaCompPagoAlumnoSerializer
     queryset = FirmaCompPagoAlumno.objects.all()
+    serializer_class = FirmaCompPagoAlumnoSerializer
+    pagination_class = FirmasResultSetPagination
 
-    def get_queryset(self):
-        
-        alumno_id = self.kwargs.get(self.lookup_field)
 
-        ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
-
-        if not ultimo_compromiso:
-            return FirmaCompPagoAlumno.objects.none()
-        else:
-            firma_ultimo_comp = FirmaCompPagoAlumno.objects.filter(
-            alumno_id=alumno_id,
-            compromiso_de_pago_id=ultimo_compromiso.id_comp_pago
-            )
-            if not firma_ultimo_comp.exists():
-                return FirmaCompPagoAlumno.objects.none()
-            else:
-                #generar_cuotas(alumno_id,ultimo_compromiso)
-                return firma_ultimo_comp
             
 class FirmarCompromisoView(APIView):
 
     def post(self, request, alumno_id=None):
         ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
-        alumno= Alumno.objects.get(id=alumno_id)
+        alumno= Alumno.objects.get(user=alumno_id)
 
         if ultimo_compromiso == None:
             return Response({"detail": "No payment commitments found"}, status=status.HTTP_404_NOT_FOUND)
@@ -93,13 +127,14 @@ class FirmarCompromisoView(APIView):
 
         firma_ultimo_comp = FirmaCompPagoAlumno.objects.filter(alumno=alumno_id, compromiso_de_pago=ultimo_compromiso.id_comp_pago)    
         serializer = FirmaCompPagoAlumnoSerializer(firma_ultimo_comp, many=True)
-
+        
+        #Generar cuotas de manera automatica
         generar_cuotas(alumno_id,ultimo_compromiso)
 
         return Response(serializer.data)
 
 
-class UltimoCompromisoDePago(APIView):
+class UltimoCompromisoDePagoViewSet(APIView):
     
     def get(self, request):
         ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
@@ -110,22 +145,9 @@ class UltimoCompromisoDePago(APIView):
   
 
 
-"""    def retrieve(self, request, *args, **kwargs):
-        ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
-
-        if not ultimo_compromiso:
-            return Response({"detail": "No payment commitments found"}, status=status.HTTP_404_NOT_FOUND)
-
-        queryset = self.get_queryset()
-
-        if not queryset.exists():
-            return Response({"detail": "No student signatures were found."}, status=status.HTTP_404_NOT_FOUND)
-
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)"""
-
 class FirmasDeUnAlumnoView(viewsets.ViewSet):
+
+    pagination_class = FirmasResultSetPagination
 
     def list(self, request, alumno_id=None):
         firmas_comp_todas = FirmaCompPagoAlumno.objects.filter(alumno_id=alumno_id)
@@ -142,3 +164,25 @@ class FirmasDeUnAlumnoView(viewsets.ViewSet):
         
         return Response(data)
 
+class CuotaViewSet(viewsets.ModelViewSet):
+    queryset: BaseManager[Cuota] = Cuota.objects.all()
+    pagination_class = CuotasResultSetPagination
+    lookup_field = 'alumno_id'
+    serializer_class = CuotaSerializer
+
+    def list(self, request, alumno_id=None):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
+    lookup_field = 'alumno_id'
+    queryset: BaseManager[Cuota] = Cuota.objects.all()
+    serializer_class = CuotaDeUnAlumnoSerializer
+    pagination_class = PagoResultsSetPagination
+    
+
+    def list(self, request, alumno_id=None):
+        queryset = self.get_queryset().filter(alumno_id=alumno_id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
