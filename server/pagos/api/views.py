@@ -30,7 +30,7 @@ class PagoDeUnAlumnoRetrieveViewSet(viewsets.ModelViewSet):
     pagination_class = PagoResultsSetPagination
 
     def get_queryset(self):
-        # Puedes manejar el filtrado directamente en el queryset aquí si quieres
+
         return Pago.objects.all()
 
     def list(self, request, alumno_id=None):
@@ -57,18 +57,7 @@ class PagoDeUnAlumnoRetrieveViewSet(viewsets.ModelViewSet):
 
 class PagoDeUnAlumnoViewSet(APIView):
     pagination_class = PagoResultsSetPagination
-    serializer_class = PagoDeUnAlumnoSerializer
-
-    """def get(self, request, alumno_id):
-        pagos = Pago.objects.filter(alumno=alumno_id)
-        if not pagos.exists():
-            return Response({"detail": "No payments found for this student."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Serializamos los pagos antes de devolverlos en la respuesta
-        serializer = self.serializer_class(pagos, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-"""
-        
+    serializer_class = PagoDeUnAlumnoSerializer      
 
 
     def post(self, request, alumno_id, *args, **kwargs):
@@ -190,8 +179,6 @@ class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
     queryset: BaseManager[Cuota] = Cuota.objects.all()
     serializer_class = CuotaDeUnAlumnoSerializer
-
-
     
 
     def list(self, request, alumno_id=None):
