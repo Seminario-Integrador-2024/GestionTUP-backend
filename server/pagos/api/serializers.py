@@ -80,6 +80,12 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
 
 
 
+
+class PagoSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = Pago
+        fields = "__all__"
+
 """
 lista de cuotas vendra en el body del post con este formato 
 [
@@ -90,9 +96,7 @@ lista de cuotas vendra en el body del post con este formato
     }
 ]
 """
-
-
-class PagoSerializer(serializers.ModelSerializer):
+"""class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
     alumno_id = serializers.PrimaryKeyRelatedField(queryset=Alumno.objects.all())
     cuotas = serializers.ListField(child=serializers.IntegerField(), write_only=True)
     monto_informado = serializers.FloatField(write_only=True)
@@ -119,4 +123,35 @@ class PagoSerializer(serializers.ModelSerializer):
             if monto_restante <= 0:
                 break
         
+        return pago"""
+
+class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
+    cuotas = serializers.ListField(child=serializers.IntegerField(), write_only=True)
+    monto_informado = serializers.FloatField(write_only=True)
+    ticket = serializers.ImageField()
+
+    class Meta:
+        model = Pago
+        fields = ['cuotas', 'monto_informado', 'ticket']
+
+    def create(self, validated_data):
+        cuotas_ids = validated_data.pop('cuotas')
+        monto_informado = validated_data.pop('monto_informado')
+
+        # El alumno_id será asignado desde la vista
+        pago = Pago.objects.create(**validated_data)
+
+        cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
+        monto_restante = monto_informado
+
+        for cuota in cuotas:
+            monto_aplicado = min(cuota.monto, monto_restante)
+            LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=monto_aplicado)
+            monto_restante -= monto_aplicado
+
+            if monto_restante <= 0:
+                break
+
         return pago
+
+

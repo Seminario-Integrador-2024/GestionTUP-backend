@@ -15,8 +15,13 @@ from ..paginations import *
 #utils imports
 from ..utils import generar_cuotas
 
-
 class PagoViewSet(viewsets.ModelViewSet):
+    queryset : BaseManager[Pago] = Pago.objects.all()
+    serializer_class = PagoSerializer
+    pagination_class = PagoResultsSetPagination
+
+
+"""class PagoDeUnAlumnoViewSet(APIView):
     queryset = Pago.objects.all()
     pagination_class = PagoResultsSetPagination
     serializer_class = PagoSerializer
@@ -24,6 +29,31 @@ class PagoViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+"""
+
+class PagoDeUnAlumnoViewSet(APIView):
+    pagination_class = PagoResultsSetPagination
+    serializer_class = PagoDeUnAlumnoSerializer
+
+    def get_queryset(self, alumno_id):
+        return Pago.objects.filter(alumno_id=alumno_id)
+
+    def post(self, request, alumno_id, *args, **kwargs):
+        # Se espera una lista de pagos
+        pagos_data = request.data  # Esto ya es una lista de diccionarios
+
+        # Iterar sobre cada pago en la lista y asignarle el alumno_id
+        for pago_data in pagos_data:
+            pago_data['alumno_id'] = alumno_id
+
+        # Validar cada pago utilizando el serializador
+        serializer = self.get_serializer(data=pagos_data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Guardar los pagos en la base de datos
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
