@@ -1,6 +1,9 @@
 from rest_framework import serializers
+from rest_framework import status
 from ..models import *
 from django.urls import reverse
+from django.utils import timezone
+from rest_framework.response import Response
 
 # Create your serializers here.
 
@@ -24,25 +27,6 @@ class CompromisoDePagoSerializer(serializers.ModelSerializer):
         return None
 
 
-
-"""class CuotaSerializer(serializers.ModelSerializer):
-    
-    monto = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Cuota
-        fields = "__all__"
-        
-    def get_monto(self, obj):
-        compromiso_de_pago = obj.compdepago
-        if compromiso_de_pago:
-            return compromiso_de_pago.monto_completo
-        return None
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation.pop('compdepago', None)
-        return representation"""
 
 class CuotaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,71 +70,66 @@ class PagoSerializer(serializers.ModelSerializer):
         model = Pago
         fields = "__all__"
 
-"""
-lista de cuotas vendra en el body del post con este formato 
-[
-    {
-        "cuotas": [1,2,3],
-        "monto_informado": 1000,
-        "ticket": "imagen.jpg"
-    }
-]
-"""
-"""class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
-    alumno_id = serializers.PrimaryKeyRelatedField(queryset=Alumno.objects.all())
-    cuotas = serializers.ListField(child=serializers.IntegerField(), write_only=True)
-    monto_informado = serializers.FloatField(write_only=True)
-    ticket = serializers.ImageField()
-
-    class Meta:
-        model = Pago
-        fields = ['alumno_id', 'cuotas', 'monto_informado', 'ticket']
-
-    def create(self, validated_data):
-        cuotas_ids = validated_data.pop('cuotas')
-        monto_informado = validated_data.pop('monto_informado')
-        
-        pago = Pago.objects.create(**validated_data)
-        
-        cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
-        monto_restante = monto_informado
-        
-        for cuota in cuotas:
-            monto_aplicado = min(cuota.monto, monto_restante)
-            LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=monto_aplicado)
-            monto_restante -= monto_aplicado
-            
-            if monto_restante <= 0:
-                break
-        
-        return pago"""
 
 class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
-    cuotas = serializers.ListField(child=serializers.IntegerField(), write_only=True)
+    cuotas = serializers.ListField( write_only=True)
     monto_informado = serializers.FloatField(write_only=True)
     ticket = serializers.ImageField()
+    
 
     class Meta:
         model = Pago
-        fields = ['cuotas', 'monto_informado', 'ticket']
+        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket']
 
     def create(self, validated_data):
-        cuotas_ids = validated_data.pop('cuotas')
-        monto_informado = validated_data.pop('monto_informado')
+        cuotas_ids_str = validated_data.pop('cuotas')
+        cuotas_ids_str = ','.join(map(str, cuotas_ids_str))
+        cuotas_ids = [int(id_str) for id_str in cuotas_ids_str.split(',')]
 
+        monto_informado = validated_data.pop('monto_informado')
+        alumno = validated_data.pop('alumno')
         # El alumno_id será asignado desde la vista
-        pago = Pago.objects.create(**validated_data)
+     
+        pago = Pago.objects.create(
+        monto_informado=monto_informado,  # Asegúrate de asignar el monto informado
+        alumno=alumno,
+        ticket=validated_data.get('ticket'),
+        estado = "Informado"
+    )
 
         cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
+        is_una_sola_cuota = len(cuotas) == 1 
         monto_restante = monto_informado
 
         for cuota in cuotas:
-            monto_aplicado = min(cuota.monto, monto_restante)
-            LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=monto_aplicado)
-            monto_restante -= monto_aplicado
-
             if monto_restante <= 0:
                 break
+
+            # Lógica para manejar los distintos casos de pago
+            if cuota.estado == 'Impaga':
+                # Pago completo a una cuota impaga
+                if monto_restante >= cuota.monto:
+                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=cuota.monto)
+                    cuota.estado = 'Pagada completa'
+                    cuota.fecha_informado = timezone.now()
+                    monto_restante -= cuota.monto
+                else:
+                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=monto_restante)
+                    cuota.estado = 'Pagada parcialmente'
+                    cuota.fecha_informado = timezone.now()
+                    monto_restante = 0
+            elif cuota.estado == 'Pagada parcialmente':
+                # Caso de pago parcial sobre cuota que ya fue parcialmente pagada
+                if monto_restante > 0:
+                    monto_aplicado = min(cuota.monto - cuota.monto, monto_restante)
+                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=monto_aplicado)
+                    cuota.monto += monto_aplicado
+                    if cuota.monto >= cuota.monto:
+                        cuota.estado = 'Pagada completa'
+                        cuota.fecha_informado = timezone.now()
+                    monto_restante -= monto_aplicado
+
+            cuota.save()  # Guardar los cambios en el estado de la cuota
 
         return pago
 

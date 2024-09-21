@@ -50,7 +50,7 @@ def cargar_matricula_anual(alumno_id,ultimo_compromiso):
             nro_cuota = nro_cuota_ultima + 1,
             monto = ultimo_compromiso.matricula,
             compdepago = ultimo_compromiso,
-            estado = "Pendiente",
+            estado = "Impaga",
             fecha_vencimiento = fecha_vencimiento ,
             fecha_pago_devengado = timezone.now().date(),
             tipo = "Matrícula",
@@ -90,7 +90,7 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
             nro_cuota=nro_cuota_ultima+i,
             monto=monto_base,
             compdepago=ultimo_compromiso,
-            estado="Pendiente",
+            estado="Impaga",
             fecha_vencimiento=fecha_vencimiento,
             fecha_pago_devengado=timezone.now(),
             tipo="Cuota",
@@ -101,7 +101,6 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
 def generar_cuotas(alumno_id,ultimo_compromiso):
 
     cargar_cuotas_alumno(alumno_id,ultimo_compromiso)
-
 
 def nro_ultima_cuota(alumno_id):
     ultima_cuota = Cuota.objects.filter(alumno=alumno_id).order_by('nro_cuota').last()
