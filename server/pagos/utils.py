@@ -66,13 +66,21 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
 
     # Determinar el monto a pagar basado en la cantidad de materias
     if materias_alumno <= cant_min_materias:
-        monto_base = ultimo_compromiso.cuota_reducida
-        monto_2venc = ultimo_compromiso.cuota_reducida_2venc
-        monto_3venc = ultimo_compromiso.cuota_reducida_3venc
+        if timezone.now().day <= ultimo_compromiso.fecha_vencimiento_1:
+            monto = ultimo_compromiso.cuota_reducida
+        elif timezone.now().day > ultimo_compromiso.fecha_vencimiento_1 and timezone.now().day <= ultimo_compromiso.fecha_vencimiento_2:
+            monto = ultimo_compromiso.cuota_reducida_2venc
+        else:
+            monto = ultimo_compromiso.cuota_reducida_3venc
     else:
-        monto_base = ultimo_compromiso.monto_completo
-        monto_2venc = ultimo_compromiso.monto_completo_2venc
-        monto_3venc = ultimo_compromiso.monto_completo_3venc
+        if timezone.now().day <= ultimo_compromiso.fecha_vencimiento_1:
+            monto = ultimo_compromiso.monto_completo
+        elif timezone.now().day > ultimo_compromiso.fecha_vencimiento_1 and timezone.now().day <= ultimo_compromiso.fecha_vencimiento_2:
+            monto = ultimo_compromiso.monto_completo_2venc
+        else:
+            monto = ultimo_compromiso.monto_completo_3venc
+
+
 
 
     # Crear matrícula anual
@@ -88,7 +96,7 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
     for i in range(1, 6):
         Cuota.objects.create(
             nro_cuota=nro_cuota_ultima+i,
-            monto=monto_base,
+            monto=monto,
             compdepago=ultimo_compromiso,
             estado="Impaga",
             fecha_vencimiento=fecha_vencimiento,
@@ -108,6 +116,12 @@ def nro_ultima_cuota(alumno_id):
         return ultima_cuota.nro_cuota
     else:
         return 0
+
+
+
+
+
+
 
 
 
