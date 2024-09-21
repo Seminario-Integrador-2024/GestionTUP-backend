@@ -11,7 +11,7 @@ from ..alumnos.models import Alumno
 def ticket_upload_to(instance, filename):
     
     user = instance.alumno.user_id  
-    return f'tickets/alumno_{user}/{filename}'
+    return f'tickets/{user}/{filename}'
 
 class Pago(models.Model):
     """

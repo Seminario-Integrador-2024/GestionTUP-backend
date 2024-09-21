@@ -21,12 +21,55 @@ class PagoViewSet(viewsets.ModelViewSet):
     pagination_class = PagoResultsSetPagination
 
 
+from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework import status
+
+class PagoDeUnAlumnoRetrieveViewSet(viewsets.ModelViewSet):
+    serializer_class = PagoDeUnAlumnoRetrieveSerializer
+    pagination_class = PagoResultsSetPagination
+
+    def get_queryset(self):
+        # Puedes manejar el filtrado directamente en el queryset aquí si quieres
+        return Pago.objects.all()
+
+    def list(self, request, alumno_id=None):
+        if alumno_id is None:
+            return Response({"detail": "Alumno ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filtrar los pagos por el ID del alumno
+        pagos = self.get_queryset().filter(alumno=alumno_id)
+
+        if not pagos.exists():
+            return Response({"detail": "No payments found for this student."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Aplicar paginación
+        paginator = self.pagination_class()
+        paginated_pagos = paginator.paginate_queryset(pagos, request)
+
+        # Serializar los pagos paginados
+        serializer = self.serializer_class(paginated_pagos, many=True)
+        
+        return paginator.get_paginated_response(serializer.data)
+
+
+
+
 class PagoDeUnAlumnoViewSet(APIView):
     pagination_class = PagoResultsSetPagination
     serializer_class = PagoDeUnAlumnoSerializer
 
-    def get_queryset(self, alumno_id):
-        return Pago.objects.filter(alumno_id=alumno_id)
+    """def get(self, request, alumno_id):
+        pagos = Pago.objects.filter(alumno=alumno_id)
+        if not pagos.exists():
+            return Response({"detail": "No payments found for this student."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Serializamos los pagos antes de devolverlos en la respuesta
+        serializer = self.serializer_class(pagos, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+"""
+        
+
 
     def post(self, request, alumno_id, *args, **kwargs):
 

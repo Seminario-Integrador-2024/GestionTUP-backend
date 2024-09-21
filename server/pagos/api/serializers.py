@@ -18,7 +18,6 @@ class CompromisoDePagoSerializer(serializers.ModelSerializer):
     def get_archivo_pdf_url(self, obj):
         request = self.context.get('request')
         if obj.archivo_pdf:
-            # Genera la URL completa al archivo PDF
             url = reverse('api:retrieve_pdf', args=[obj.pk])
             if request is not None:
                 return request.build_absolute_uri(url)
@@ -55,7 +54,6 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        # Puedes modificar los datos aquí si es necesario
         return representation
 
     class Meta:
@@ -71,8 +69,23 @@ class PagoSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+
+class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
+    cuotas = serializers.SerializerMethodField() 
+
+    class Meta:
+        model = Pago
+        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas']
+
+    def get_cuotas(self, obj):
+      
+        lineas_pago = LineaDePago.objects.filter(pago=obj)
+        cuotas = [linea.cuota for linea in lineas_pago] 
+        return CuotaSerializer(cuotas, many=True).data 
+
+
 class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
-    cuotas = serializers.ListField( write_only=True)
+    cuotas = serializers.ListField(write_only=True)
     monto_informado = serializers.FloatField(write_only=True)
     ticket = serializers.ImageField()
     
@@ -88,17 +101,16 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
 
         monto_informado = validated_data.pop('monto_informado')
         alumno = validated_data.pop('alumno')
-        # El alumno_id será asignado desde la vista
+
      
         pago = Pago.objects.create(
-        monto_informado=monto_informado,  # Asegúrate de asignar el monto informado
+        monto_informado=monto_informado,
         alumno=alumno,
         ticket=validated_data.get('ticket'),
         estado = "Informado"
     )
 
         cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
-        is_una_sola_cuota = len(cuotas) == 1 
         monto_restante = monto_informado
 
         for cuota in cuotas:
@@ -129,7 +141,7 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
                         cuota.fecha_informado = timezone.now()
                     monto_restante -= monto_aplicado
 
-            cuota.save()  # Guardar los cambios en el estado de la cuota
+            cuota.save()
 
         return pago
 
