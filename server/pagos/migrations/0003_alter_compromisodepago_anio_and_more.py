@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='compromisodepago',
             name='anio',
-            field=models.DateTimeField(default=1111, max_length=10),
+            field=models.DateTimeField(max_length=10),
             preserve_default=False,
         ),
         migrations.AlterField(
