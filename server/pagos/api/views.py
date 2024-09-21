@@ -179,6 +179,7 @@ class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
     queryset: BaseManager[Cuota] = Cuota.objects.all()
     serializer_class = CuotaDeUnAlumnoSerializer
+    pagination_class = PagoResultsSetPagination
     
 
     def list(self, request, alumno_id=None):
