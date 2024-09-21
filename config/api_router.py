@@ -32,7 +32,6 @@ router.register("alumnos", AlumnosViewSet, basename="alumno")
 router.register("pagos", PagoViewSet, basename="pago")
 router.register("cuotas", CuotaViewSet, basename="cuota")
 router.register("compromisos", CompromisoDePagoViewSet, basename="compromiso")
-
 router.register("firmas", FirmaCompPagoAlumnoViewSets, basename="firma")
 router.register("materias", MateriaViewSet, basename="materia")
 router.register("excels", ExcelViewSet, basename="excel")

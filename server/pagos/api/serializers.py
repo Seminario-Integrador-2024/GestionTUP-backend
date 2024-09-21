@@ -48,9 +48,20 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
     numero = serializers.IntegerField(source='nro_cuota')
     montoActual = serializers.FloatField(source='monto')
     fechaVencimiento = serializers.DateField(source='fecha_vencimiento')
-    valorpagado = serializers.FloatField(source='monto')
-    estado = serializers.CharField()
-    tipo_cuota = serializers.CharField(source='tipo')
+    tipocuota = serializers.CharField(source='tipo')
+
+    valorpagado = serializers.SerializerMethodField()
+    valorinformado = serializers.SerializerMethodField()
+
+    def get_valorinformado(self, instance):
+        # Buscar el monto aplicado a esta cuota a través de LineaDePago
+        linea_pagos = LineaDePago.objects.filter(cuota=instance)
+        return sum(linea_pago.monto_aplicado for linea_pago in linea_pagos)
+    
+    def get_valorpagado(self, instance):
+        # Sumar todos los montos aplicados a esta cuota a través de LineaDePago
+        linea_pagos = LineaDePago.objects.filter(cuota=instance)
+        return sum(linea_pago.monto_aplicado for linea_pago in linea_pagos)
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -58,7 +69,7 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cuota
-        fields = ['numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipo_cuota']
+        fields = ['numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado']
 
 
 
@@ -84,11 +95,11 @@ class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
         return CuotaSerializer(cuotas, many=True).data 
 
 
+
 class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
     cuotas = serializers.ListField(write_only=True)
     monto_informado = serializers.FloatField(write_only=True)
     ticket = serializers.ImageField()
-    
 
     class Meta:
         model = Pago
@@ -102,13 +113,12 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
         monto_informado = validated_data.pop('monto_informado')
         alumno = validated_data.pop('alumno')
 
-     
         pago = Pago.objects.create(
-        monto_informado=monto_informado,
-        alumno=alumno,
-        ticket=validated_data.get('ticket'),
-        estado = "Informado"
-    )
+            monto_informado=monto_informado,
+            alumno=alumno,
+            ticket=validated_data.get('ticket'),
+            estado="Informado"
+        )
 
         cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
         monto_restante = monto_informado
@@ -117,14 +127,17 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             if monto_restante <= 0:
                 break
 
+            # Obtener el total pagado previamente para esta cuota
+            total_pagado_anteriormente = LineaDePago.objects.filter(cuota=cuota).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
+
             # Lógica para manejar los distintos casos de pago
-            if cuota.estado == 'Impaga':
+            if cuota.estado in ['Impaga', 'Vencida']:
                 # Pago completo a una cuota impaga
-                if monto_restante >= cuota.monto:
-                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=cuota.monto)
-                    cuota.estado = 'Pagada completa'
+                if monto_restante >= (cuota.monto - total_pagado_anteriormente):
+                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=cuota.monto - total_pagado_anteriormente)
+                    cuota.estado = 'Pagada completamente'
                     cuota.fecha_informado = timezone.now()
-                    monto_restante -= cuota.monto
+                    monto_restante -= (cuota.monto - total_pagado_anteriormente)
                 else:
                     LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=monto_restante)
                     cuota.estado = 'Pagada parcialmente'
@@ -133,16 +146,16 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             elif cuota.estado == 'Pagada parcialmente':
                 # Caso de pago parcial sobre cuota que ya fue parcialmente pagada
                 if monto_restante > 0:
-                    monto_aplicado = min(cuota.monto - cuota.monto, monto_restante)
+                    monto_aplicado = min(cuota.monto - total_pagado_anteriormente, monto_restante)
                     LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=monto_aplicado)
-                    cuota.monto += monto_aplicado
-                    if cuota.monto >= cuota.monto:
-                        cuota.estado = 'Pagada completa'
+                    total_pagado_actual = total_pagado_anteriormente + monto_aplicado
+
+                    if total_pagado_actual >= cuota.monto:
+                        cuota.estado = 'Pagada completamente'
                         cuota.fecha_informado = timezone.now()
+
                     monto_restante -= monto_aplicado
 
             cuota.save()
 
         return pago
-
-
