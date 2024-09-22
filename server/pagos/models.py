@@ -4,8 +4,14 @@ from django.utils import timezone
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 import os
+from django.core.files import File
 
 from ..alumnos.models import Alumno
+
+def ticket_upload_to(instance, filename):
+    
+    user = instance.alumno.user_id  
+    return f'tickets/{user}/{filename}'
 
 class Pago(models.Model):
     """
@@ -28,16 +34,27 @@ class Pago(models.Model):
     """
 
     id_pago = models.AutoField(primary_key=True)
-    descripcion = models.TextField()
-    medio_pago = models.CharField(max_length=255)
-    nro_recibo = models.IntegerField()
-    monto = models.FloatField()
-    estado = models.BooleanField()
+    #descripcion = models.TextField()
+    #medio_pago = models.CharField(max_length=255)
+    #nro_recibo = models.IntegerField()
+    monto_informado = models.FloatField()
+    estado = models.CharField(blank=True, null=True)
     fecha = models.DateField()
-    comprobante = models.CharField(max_length=255)
+    #comprobante = models.CharField(max_length=255)
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
-    cuota = models.ForeignKey("Cuota", on_delete=models.CASCADE)
+    #compromiso_de_pago = models.FileField(upload_to='compromisos_pagos/', blank=True,  null=True)
+    ticket = models.ImageField(upload_to=ticket_upload_to, blank=True, null=True)
+    
+    def save(self, *args, **kwargs):
+        self.fecha = timezone.now()
+        super().save(*args, **kwargs)
 
+@receiver(post_delete, sender=Pago)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+
+    if instance.ticket:
+        if os.path.isfile(instance.ticket.path):
+            os.remove(instance.ticket.path) 
 
 class CompromisoDePago(models.Model):
     """
@@ -73,18 +90,18 @@ class CompromisoDePago(models.Model):
     """
 
     id_comp_pago = models.AutoField(primary_key=True)
-    cuatrimestre = models.CharField(max_length=255, blank=True,  null=True)
-    anio = models.DateTimeField(max_length=10,  blank=True,  null=True)
-    monto_completo = models.FloatField( blank=True,  null=True)
-    monto_completo_2venc = models.FloatField( blank=True,  null=True)
-    monto_completo_3venc = models.FloatField( blank=True,  null=True)
-    matricula = models.FloatField( blank=True,  null=True)
-    cuota_reducida = models.FloatField( blank=True,  null=True)
-    cuota_reducida_2venc = models.FloatField( blank=True,  null=True)
-    cuota_reducida_3venc = models.FloatField( blank=True,  null=True)
-    fecha_vencimiento_1 = models.IntegerField( blank=True,  null=True, default=10)
-    fecha_vencimiento_2 = models.IntegerField( blank=True,  null=True, default=15)
-    fecha_vencimiento_3 = models.IntegerField( blank=True,  null=True, default=30)
+    cuatrimestre = models.CharField(max_length=255)
+    anio = models.DateTimeField(max_length=10)
+    monto_completo = models.FloatField()
+    monto_completo_2venc = models.FloatField()
+    monto_completo_3venc = models.FloatField()
+    matricula = models.FloatField()
+    cuota_reducida = models.FloatField()
+    cuota_reducida_2venc = models.FloatField()
+    cuota_reducida_3venc = models.FloatField()
+    fecha_vencimiento_1 = models.IntegerField()
+    fecha_vencimiento_2 = models.IntegerField()
+    fecha_vencimiento_3 = models.IntegerField()
     comprimiso_path = models.CharField(max_length=255, blank=True, null=True)
     archivo_pdf = models.FileField(upload_to='compromisos/', blank=True,  null=True)
     fecha_ultima_modif = models.DateTimeField(max_length=10,  blank=True,  null=True)
@@ -152,27 +169,6 @@ class Cuota(models.Model):
     
 
 
-class LineaDePago(models.Model):
-    """
-    Represents the relationship between a payment and an installment.
-    Allows partial payments of installments and payments applied to multiple installments.
-
-    Args:
-        models (type): The Django models module.
-
-    Attributes:
-        id_linea_pago (AutoField): The primary key for the LineaDePago.
-        pago (ForeignKey): The foreign key to the associated payment.
-        cuota (ForeignKey): The foreign key to the associated installment.
-        monto_aplicado (FloatField): The amount of the payment applied to this installment.
-    """
-
-    id_linea_pago = models.AutoField(primary_key=True)
-    pago = models.ForeignKey(Pago, on_delete=models.CASCADE)
-    cuota = models.ForeignKey(Cuota, on_delete=models.CASCADE)
-    monto_aplicado = models.FloatField()
-
-
 class FirmaCompPagoAlumno(models.Model):
     """
     Represents the relationship between an Alumno and a CompromisoDePago,
@@ -192,3 +188,24 @@ class FirmaCompPagoAlumno(models.Model):
     compromiso_de_pago = models.ForeignKey(CompromisoDePago, on_delete=models.CASCADE)
     fecha_firmado = models.DateTimeField(auto_now_add=True, blank=True,  null=True )
     firmado = models.BooleanField(default=True, blank=True,  null=True)
+
+
+class LineaDePago(models.Model):
+    """
+    Represents the relationship between a payment and an installment.
+    Allows partial payments of installments and payments applied to multiple installments.
+
+    Args:
+        models (type): The Django models module.
+
+    Attributes:
+        id_linea_pago (AutoField): The primary key for the LineaDePago.
+        pago (ForeignKey): The foreign key to the associated payment.
+        cuota (ForeignKey): The foreign key to the associated installment.
+        monto_aplicado (FloatField): The amount of the payment applied to this installment.
+    """
+
+    id_linea_pago = models.AutoField(primary_key=True)
+    pago = models.ForeignKey(Pago, on_delete=models.CASCADE)
+    cuota = models.ForeignKey(Cuota, on_delete=models.CASCADE)
+    monto_aplicado = models.FloatField()
