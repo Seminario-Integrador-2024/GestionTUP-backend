@@ -10,6 +10,7 @@ from server.alumnos.models import TipoEstado
 from server.alumnos.models import TipoInhabilitacion
 from server.users.api.serializers import UserCreateSerializer
 from server.users.models import User
+from server.materias.models import Materia
 
 
 class AlumnoRetrieveSerializer(serializers.ModelSerializer):
@@ -64,4 +65,9 @@ class TipoInhabilitacionSerializer(serializers.ModelSerializer):
 class TipoEstadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoEstado
+        fields = "__all__"
+
+class MateriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Materia
         fields = "__all__"
