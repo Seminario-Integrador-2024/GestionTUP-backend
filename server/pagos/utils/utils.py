@@ -7,9 +7,9 @@ import time
 from datetime import date
 
 #pagos imports
-from ..alumnos.models import Alumno
-from ..materias.models import MateriaAlumno
-from .models import Cuota, CompromisoDePago
+from ...alumnos.models import Alumno
+from ...materias.models import MateriaAlumno
+from ..models import Cuota, CompromisoDePago
 
 
 # Carga las cuotas del alumno segun las materias que este tenga
