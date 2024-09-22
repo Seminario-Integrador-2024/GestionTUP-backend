@@ -34,7 +34,7 @@ class Pago(models.Model):
     """
 
     id_pago = models.AutoField(primary_key=True)
-    #descripcion = models.TextField()
+    comentario = models.TextField(blank=True, null=True)
     #medio_pago = models.CharField(max_length=255)
     #nro_recibo = models.IntegerField()
     monto_informado = models.FloatField()

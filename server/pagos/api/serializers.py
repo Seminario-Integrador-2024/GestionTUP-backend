@@ -86,7 +86,7 @@ class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pago
-        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas']
+        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas','comentario']
 
     def get_cuotas(self, obj):
       
@@ -100,10 +100,12 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
     cuotas = serializers.ListField(write_only=True)
     monto_informado = serializers.FloatField(write_only=True)
     ticket = serializers.ImageField()
+    comentario = serializers.CharField(required = False, allow_blank=True)
+
 
     class Meta:
         model = Pago
-        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket']
+        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket', 'comentario']
 
     def create(self, validated_data):
         cuotas_ids_str = validated_data.pop('cuotas')
@@ -112,12 +114,17 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
 
         monto_informado = validated_data.pop('monto_informado')
         alumno = validated_data.pop('alumno')
+        comentario = validated_data.pop('comentario')
+        print("____________________________",comentario,type(comentario))
+
+        
 
         pago = Pago.objects.create(
             monto_informado=monto_informado,
             alumno=alumno,
             ticket=validated_data.get('ticket'),
-            estado="Informado"
+            estado="Informado",
+            comentario = comentario if comentario is not '' else "Informado desde GestiónTUP"
         )
 
         cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
