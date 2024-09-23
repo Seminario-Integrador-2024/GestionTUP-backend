@@ -45,7 +45,7 @@ app_name = "api"
 # url de pagos
 url_pagos = [
     path("compromisos/archivo/<int:pk>/", CompromisoDePagoViewSet.as_view({"get": "retrieve_pdf"}), name="retrieve_pdf"),
-    path("compromisos/ultimo-compromiso-de-pago/", UltimoCompromisoDePagoViewSet.as_view(), name="ultimo-compromiso-de-pago"),
+    path("ultimo-compromiso-de-pago/", UltimoCompromisoDePagoViewSet.as_view(), name="ultimo-compromiso-de-pago"),
     path("firmas/firmas-de-alumno/<int:alumno_id>/", FirmasDeUnAlumnoView.as_view({"get": "list"}), name="firmas-de-alumno"),
     path("firmas/firmar-compromiso/<int:alumno_id>/", FirmarCompromisoView.as_view(),name="firmar-compromiso"),
     path("cuotas/alumno/<int:alumno_id>/", CuotaDeUnAlumnoViewSet.as_view({"get": "list"}), name="cuotas-de-alumno"),
