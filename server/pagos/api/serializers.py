@@ -5,6 +5,8 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.response import Response
 
+from ..utils.email_sender import enviar_email_de_pagos
+
 # Create your serializers here.
 
 class CompromisoDePagoSerializer(serializers.ModelSerializer):
@@ -86,7 +88,7 @@ class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pago
-        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas','comentario']
+        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas','comentario','nro_transferencia']
 
     def get_cuotas(self, obj):
       
@@ -101,11 +103,12 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
     monto_informado = serializers.FloatField(write_only=True)
     ticket = serializers.ImageField()
     comentario = serializers.CharField(required = False, allow_blank=True)
+    nro_transferencia = serializers.IntegerField()
 
 
     class Meta:
         model = Pago
-        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket', 'comentario']
+        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket', 'comentario','nro_transferencia']
 
     def create(self, validated_data):
         cuotas_ids_str = validated_data.pop('cuotas')
@@ -115,15 +118,21 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
         monto_informado = validated_data.pop('monto_informado')
         alumno = validated_data.pop('alumno')
         comentario = validated_data.pop('comentario')
-            
+        nro_transferencia = validated_data.pop('nro_transferencia')
+        
 
         pago = Pago.objects.create(
             monto_informado=monto_informado,
             alumno=alumno,
             ticket=validated_data.get('ticket'),
             estado="Informado",
-            comentario = comentario if comentario != '' else "Informado desde GestiónTUP"
+            comentario = comentario,
+            nro_transferencia = nro_transferencia
         )
+
+        #Mandar el email a tesoeria
+
+        enviar_email_de_pagos()
 
         cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
         monto_restante = monto_informado
