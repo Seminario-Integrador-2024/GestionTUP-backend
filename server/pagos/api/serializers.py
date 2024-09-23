@@ -5,6 +5,8 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.response import Response
 
+from ..utils.email_sender import enviar_email_de_pagos
+
 # Create your serializers here.
 
 class CompromisoDePagoSerializer(serializers.ModelSerializer):
@@ -28,20 +30,46 @@ class CompromisoDePagoSerializer(serializers.ModelSerializer):
 
 
 class CuotaSerializer(serializers.ModelSerializer):
+    compromiso_de_pago = serializers.SerializerMethodField()  # Usar SerializerMethodField
+
     class Meta:
         model = Cuota
-        fields = "__all__"
-    
+        exclude = ['compdepago']  # Incluir todos los campos del modelo
+
+    def get_compromiso_de_pago(self, obj):
+        compromiso = obj.compdepago  # Asegúrate de que 'compdepag' sea el campo correcto
+
+        if compromiso:
+            anio = compromiso.anio.year % 100  # Obtener los últimos 2 dígitos del año
+            cuatrimestre = str(compromiso.cuatrimestre).zfill(2)  # Asegurarse de que tenga 2 dígitos
+            
+            return f"{cuatrimestre}/{anio:02}"  # Retornar el formato deseado
+        return None  # Retornar None si no hay compromiso
+
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        queryset = self.get_queryset()  # Obtener el queryset
+        serializer = self.get_serializer(queryset, many=True)  # Serializar el queryset
+        return Response(serializer.data)  # Retornar la respuesta
+    
+
 
 
 class FirmaCompPagoAlumnoSerializer(serializers.ModelSerializer):
+    compromiso_de_pago = serializers.SerializerMethodField()
+
     class Meta:
         model = FirmaCompPagoAlumno
         fields = "__all__"
+
+    def get_compromiso_de_pago(self, obj):
+        compromiso = obj.compromiso_de_pago
+        
+        if compromiso:
+            anio = compromiso.anio.year % 100 
+            cuatrimestre = str(compromiso.cuatrimestre).zfill(2)  
+            
+            return f"{cuatrimestre}/{anio:02}" 
+        return None
 
 
 class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
@@ -86,24 +114,46 @@ class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pago
-        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas']
+        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas','comentario','nro_transferencia']
 
     def get_cuotas(self, obj):
       
         lineas_pago = LineaDePago.objects.filter(pago=obj)
         cuotas = [linea.cuota for linea in lineas_pago] 
         return CuotaSerializer(cuotas, many=True).data 
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['fecha'] = instance.fecha.strftime('%Y-%m-%d') 
+        return representation
 
 
 
 class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
     cuotas = serializers.ListField(write_only=True)
-    monto_informado = serializers.FloatField(write_only=True)
+    monto_informado = serializers.FloatField()
     ticket = serializers.ImageField()
+    comentario = serializers.CharField(required = False, allow_blank=True)
+    nro_transferencia = serializers.IntegerField()
+
 
     class Meta:
         model = Pago
-        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket']
+        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket', 'comentario','nro_transferencia']
+
+    
+    def get_cuotas(self, obj):
+        lineas_pago = LineaDePago.objects.filter(pago=obj)
+        cuotas = [linea.cuota for linea in lineas_pago] 
+        return CuotaSerializer(cuotas, many=True).data 
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['cuotas'] = self.get_cuotas(instance)
+        return representation
+
+
+
 
     def create(self, validated_data):
         cuotas_ids_str = validated_data.pop('cuotas')
@@ -112,13 +162,18 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
 
         monto_informado = validated_data.pop('monto_informado')
         alumno = validated_data.pop('alumno')
+        comentario = validated_data.pop('comentario')
+        nro_transferencia = validated_data.pop('nro_transferencia')
+        
 
         pago = Pago.objects.create(
             monto_informado=monto_informado,
             alumno=alumno,
             ticket=validated_data.get('ticket'),
-            estado="Informado"
-        )
+            estado="Informado",
+            comentario = comentario if comentario != '' else 'No hay comentario',
+            nro_transferencia = nro_transferencia
+        )     
 
         cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
         monto_restante = monto_informado
@@ -157,5 +212,8 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
                     monto_restante -= monto_aplicado
 
             cuota.save()
+
+        #Mandar el email a tesoeria
+        enviar_email_de_pagos(pago)
 
         return pago

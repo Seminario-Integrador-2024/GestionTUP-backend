@@ -26,11 +26,6 @@ urlpatterns = [
         name="retrieve-pdf",
     ),
     path(
-        "ultimo-compr-de-pag/",
-        UltimoCompromisoDePagoViewSet.as_view(),
-        name ="ultimo-compromiso-de-pago",
-    ),
-    path(
         "firmas-de-alumno/<int:alumno_id>/",
         FirmasDeUnAlumnoView.as_view({"get": "list"}),
         name="firmas-de-alumno",
