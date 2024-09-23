@@ -34,7 +34,7 @@ class CuotaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cuota
-        fields = "__all__"  # Incluir todos los campos del modelo
+        exclude = ['compdepago']  # Incluir todos los campos del modelo
 
     def get_compromiso_de_pago(self, obj):
         compromiso = obj.compdepago  # Asegúrate de que 'compdepag' sea el campo correcto
