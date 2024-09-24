@@ -155,8 +155,8 @@ class Cuota(models.Model):
         tipo_puesto (CharField): The tipo_puesto of the Cuota.
     """
 
-    id_cuota = models.AutoField(primary_key=True)
-    nro_cuota = models.IntegerField()
+    #id_cuota = models.AutoField(primary_key=True)
+    nro_cuota = models.IntegerField(primary_key=True)
     monto = models.FloatField()
     compdepago =  models.ForeignKey(CompromisoDePago, on_delete=models.CASCADE)
     estado = models.CharField(max_length=255)
