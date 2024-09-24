@@ -76,22 +76,45 @@ class Alumno(models.Model):
         return self.user.dni
 
 
-@receiver([pre_save], sender=Alumno)
-def alumno_pre_save(sender, instance, **kwargs):
-    """
-    alumno_pre_save add alumno to Alumnos group.
+# @receiver([pre_save], sender=Alumno)
+# def alumno_pre_save(sender, instance, **kwargs):
+#     """
+#     alumno_pre_save add alumno to Alumnos group.
 
-    Args:
-        sender (Alumno): The Alumno model.
-        instance (Alumno): The instance of the Alumno model.
-        created (bool): True if the instance was created, False otherwise.
-        **kwargs: Arbitrary keyword arguments.
-    """
-    try:
-        Group.objects.get(name="Alumnos")
-    except Group.DoesNotExist:
-        Group.objects.create(name="Alumnos")
-    instance.user.groups.add(Group.objects.get(name="Alumnos"))
+#     Args:
+#         sender (Alumno): The Alumno model.
+#         instance (Alumno): The instance of the Alumno model.
+#         created (bool): True if the instance was created, False otherwise.
+#         **kwargs: Arbitrary keyword arguments.
+#     """
+#     try:
+#         Group.objects.get(name="Alumnos")
+#     except Group.DoesNotExist:
+#         Group.objects.create(name="Alumnos")
+#     instance.user.groups.add(Group.objects.get(name="Alumnos"))
+
+
+"""
+in simple terms, the receiver decorator is used to register a signal handler.
+the add_user_to_alumno_group function is the signal handler that is registered to the post_save signal of the User model.
+the add_alumno_to_group function is the signal handler that is registered to the post_save signal of the Alumno model.
+"""
+# trigger to add user to Alumnos group if user is an Alumno
+@receiver(pre_save, sender=User)
+def add_user_to_alumno_group(sender, instance, created, **kwargs):
+    if created:
+
+        alumno_group, _ = Group.objects.get_or_create(name='Alumnos')
+        if Alumno.objects.filter(user=instance).exists():
+            instance.groups.add(alumno_group)
+
+# trigger to add alumno to Alumnos group
+@receiver(pre_save), sender=Alumno)
+def add_alumno_to_group(sender, instance, created, **kwargs):
+    if created:
+        alumno_group, _ = Group.objects.get_or_create(name='Alumnos')
+        instance.user.groups.add(alumno_group)
+
 
 
 @receiver(pre_delete, sender=Alumno)

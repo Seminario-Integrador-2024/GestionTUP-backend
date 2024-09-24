@@ -8,6 +8,10 @@ from rest_framework.serializers import CharField
 from rest_framework_simplejwt.tokens import RefreshToken
 from server.users.models import User
 
+# for the user model
+from server.alumnos.models import Alumno
+from django.contrib.auth.models import Group
+
 
 class UserViewSetSerializer(serializers.ModelSerializer[User]):
     class Meta:
@@ -110,10 +114,7 @@ class LoginSerializer(DRALoginSerializer):
 
         return attrs
 
-
 class UserDetailsSerializer(DRADetailsSerializer):
-
-    # roles es un campo personalizado que se añade a la respuesta
     roles = serializers.SerializerMethodField()
 
     class Meta:
@@ -124,12 +125,10 @@ class UserDetailsSerializer(DRADetailsSerializer):
 
     def get_roles(self, obj):
         roles = []
-
-        # se valida si el usuario es staff o superusuario
         if obj.is_staff:
             roles.append('staff')
         if obj.is_superuser:
             roles.append('superuser')
-        # si dni usuario, se encuentra en la tabla alumnos, se añade el rol de alumno
-
+        if Alumno.objects.filter(user=obj).exists():
+            roles.append('alumno')
         return roles
