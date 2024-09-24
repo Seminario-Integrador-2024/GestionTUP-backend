@@ -4,8 +4,9 @@ from email.message import EmailMessage
 import ssl
 import smtplib
 from pathlib import Path
-
+from django.db import models
 from ...alumnos.models import Alumno
+from ..models import LineaDePago
 
 dotenv_path = Path(__file__).resolve().parent.parent.parent.parent / '.envs' / '.local' / '.email'
 load_dotenv(dotenv_path)
@@ -25,25 +26,37 @@ def enviar_email_de_pagos(pago):
 
     # Preparar el correo
     alumno_buscar = datos_pago.get('alumno')
-    alumno = Alumno.objects.get(user=alumno_buscar)
-    
+    alumno = Alumno.objects.get(user=alumno_buscar)     
+    monto_informado = datos_pago.get('monto_informado')
 
-    monto = datos_pago.get('monto_informado')
     comentario = datos_pago.get('comentario', 'No hay comentario')
     nro_transferencia = datos_pago.get('nro_transferencia')
 
-    imagen_path = "http://localhost:8000"+datos_pago.get("ticket")
+    
+    imagen_path = "http://localhost:8000" + datos_pago.get("ticket")
+    
 
     # Extraer solo el número, estado y monto de cada cuota
     cuotas_info = []
     for cuota in datos_pago.get('cuotas', []):
+        nro_cuota = cuota.get('nro_cuota')
+        
+        # Filtrar todas las líneas de pago que pertenecen a la cuota actual
+        total_pagado_anteriormente = LineaDePago.objects.filter(cuota_id=nro_cuota).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
+        
         cuota_info = {
-            'nro_cuota': cuota.get('nro_cuota'),
+            'nro_cuota': nro_cuota,
             'estado': cuota.get('estado'),
-            'monto': cuota.get('monto')
+            'monto': cuota.get('monto'),
+            'tipo': cuota.get('tipo'),
+            'fecha_informado': cuota.get('fecha_informado'),
+            'valorpagado': cuota.get('valorpagado'),
+            'total_pagado_anteriormente': total_pagado_anteriormente  # Agregamos el total pagado previamente
         }
+        
         cuotas_info.append(cuota_info)
 
+    print("#################################",cuotas_info)
     # Definir el asunto del correo
     subject = f"Confirmación de pago del alumno {alumno.user.full_name}"
 
@@ -57,18 +70,23 @@ def enviar_email_de_pagos(pago):
     DNI: {alumno.user.dni}
     Email:{alumno.user.email}
     CUIL: NN-DDDDDDD-N
-    Monto Total: {monto}
+    Monto del pago informado: {monto_informado}
     Comentario: {comentario}
     Número de Transferencia: {nro_transferencia}
     Ticket: {imagen_path}
-
+    Nombre de la Carrera: Tecnicatura Universitaria en Programación
+    Fecha: {cuota['fecha_informado']}
     Detalle de Cuotas:
     """
     
     for cuota in cuotas_info:
-        body += f"\n- Cuota {cuota['nro_cuota']}: {cuota['estado']} - Monto: {cuota['monto']}\n"
+        if cuota['tipo'] == "Cuota":
+            body += f"\n- Cuota {cuota['nro_cuota']}: {cuota['estado']} - Monto: {cuota['monto']} - Total pagada:{cuota['total_pagado_anteriormente']}\n"
+        else:
+             body += f"\n- Matricula {cuota['nro_cuota']}: {cuota['estado']} - Monto: {cuota['monto']} - Total pagada:{cuota['total_pagado_anteriormente']}\n"
 
-    body += "\nPor favor, proceder con las verificaciones correspondientes.\n\nAtentamente,\nGestión de Pagos"
+
+    body += "\nPor favor, proceder con las verificaciones correspondientes.\n\nAtentamente,\nGestiónTUP de Pagos"
 
 # Adjuntar la imagen si existe
     if imagen_path and os.path.exists(imagen_path):
