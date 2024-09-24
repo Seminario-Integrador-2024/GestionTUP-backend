@@ -4,6 +4,9 @@ from email.message import EmailMessage
 import ssl
 import smtplib
 from pathlib import Path
+from django.db import models
+from ...alumnos.models import Alumno
+from ..models import LineaDePago
 
 dotenv_path = Path(__file__).resolve().parent.parent.parent.parent / '.envs' / '.local' / '.email'
 load_dotenv(dotenv_path)
@@ -22,23 +25,40 @@ def enviar_email_de_pagos(pago):
     datos_pago = pago_serializer.data
 
     # Preparar el correo
-    alumno = datos_pago.get('alumno')
-    monto = datos_pago.get('monto_informado')
+    alumno_buscar = datos_pago.get('alumno')
+    alumno = Alumno.objects.get(user=alumno_buscar)     
+    monto_informado = datos_pago.get('monto_informado')
+
     comentario = datos_pago.get('comentario', 'No hay comentario')
     nro_transferencia = datos_pago.get('nro_transferencia')
+
+    
+    imagen_path = "http://localhost:8000" + datos_pago.get("ticket")
+    
 
     # Extraer solo el número, estado y monto de cada cuota
     cuotas_info = []
     for cuota in datos_pago.get('cuotas', []):
+        nro_cuota = cuota.get('nro_cuota')
+        
+        # Filtrar todas las líneas de pago que pertenecen a la cuota actual
+        total_pagado_anteriormente = LineaDePago.objects.filter(cuota_id=nro_cuota).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
+        
         cuota_info = {
-            'nro_cuota': cuota.get('nro_cuota'),
+            'nro_cuota': nro_cuota,
             'estado': cuota.get('estado'),
-            'monto': cuota.get('monto')
+            'monto': cuota.get('monto'),
+            'tipo': cuota.get('tipo'),
+            'fecha_informado': cuota.get('fecha_informado'),
+            'valorpagado': cuota.get('valorpagado'),
+            'total_pagado_anteriormente': total_pagado_anteriormente  # Agregamos el total pagado previamente
         }
+        
         cuotas_info.append(cuota_info)
 
+    print("#################################",cuotas_info)
     # Definir el asunto del correo
-    subject = f"Confirmación de pago del alumno {alumno}"
+    subject = f"Confirmación de pago del alumno {alumno.user.full_name}"
 
     # Crear el cuerpo del mensaje
     body = f"""
@@ -46,18 +66,41 @@ def enviar_email_de_pagos(pago):
 
     Hemos recibido el siguiente pago:
 
-    Alumno: {alumno}
-    Monto Total: {monto}
+    Alumno:{alumno.user.full_name}
+    DNI: {alumno.user.dni}
+    Email:{alumno.user.email}
+    CUIL: NN-DDDDDDD-N
+    Monto del pago informado: ${monto_informado}
     Comentario: {comentario}
     Número de Transferencia: {nro_transferencia}
-
+    Ticket: {imagen_path}
+    Nombre de la Carrera: Tecnicatura Universitaria en Programación
+    Fecha: {cuota['fecha_informado']}
     Detalle de Cuotas:
     """
     
     for cuota in cuotas_info:
-        body += f"\n- Cuota {cuota['nro_cuota']}: {cuota['estado']} - Monto: {cuota['monto']}\n"
+        if cuota['tipo'] == "Cuota":
+            body += f"\n- Cuota {cuota['nro_cuota']}: {cuota['estado']} - Monto total de la cuota: $ {cuota['monto']} - Suma de todos los pagos parciales: ${cuota['total_pagado_anteriormente']}\n"
+        else:
+             body += f"\n- Matricula {cuota['nro_cuota']}: {cuota['estado']} - Monto total de la matricula: $ {cuota['monto']} - Suma de todos los pagos parciales: ${cuota['total_pagado_anteriormente']}\n"
 
-    body += "\nPor favor, proceder con las verificaciones correspondientes.\n\nAtentamente,\nGestión de Pagos"
+
+    body += "\nPor favor, proceder con las verificaciones correspondientes.\n\nAtentamente,\nGestiónTUP de Pagos"
+
+# Adjuntar la imagen si existe
+    if imagen_path and os.path.exists(imagen_path):
+        mime_type, _ = mimetypes.guess_type(imagen_path)
+        if mime_type:
+            maintype, subtype = mime_type.split('/')
+            print(f"Adjuntando imagen: {imagen_path} con tipo MIME: {mime_type}")
+            
+            with open(imagen_path, 'rb') as img:
+                em.add_attachment(img.read(), maintype=maintype, subtype=subtype, filename=os.path.basename(imagen_path))
+        else:
+            print(f"No se pudo determinar el tipo MIME para: {imagen_path}")
+    else:
+        print(f"La imagen no existe o la ruta no es válida: {imagen_path}")
 
     # Configurar el correo
     em = EmailMessage()
@@ -76,38 +119,3 @@ def enviar_email_de_pagos(pago):
 
     print(f"Correo enviado a {email_reciver} sobre el pago del alumno {alumno}.")
 
-
-"""
-import os
-from dotenv import load_dotenv
-from email.message import EmailMessage 
-import ssl
-import smtplib
-from pathlib import Path
-
-dotenv_path = Path(__file__).resolve().parent.parent.parent.parent / '.envs' / '.local' / '.email'
-load_dotenv(dotenv_path)
-
-password = os.getenv("PASSWORD")
-email_sender = "gestiontup2024@gmail.com"
-email_reciver = "tesoreriautnpruebas2024@gmail.com"
-
-def enviar_email_de_pagos(pago):
-        
-    em = EmailMessage()
-
-    subject = "Asunto del mensaje"
-    
-    
-    
-
-    em["From"] = email_sender
-    em["To"] = email_reciver
-    em["subject"] = subject
-    em.set_content(body)
-
-    context = ssl.create_default_context()
-
-    with smtplib.SMTP_SSL("smtp.gmail.com",465,context=context) as smtp:
-        smtp.login(email_sender,password)
-        smtp.sendmail(email_sender,email_reciver,em.as_string())"""

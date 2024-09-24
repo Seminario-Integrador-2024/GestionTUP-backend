@@ -175,7 +175,7 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             nro_transferencia = nro_transferencia
         )     
 
-        cuotas = Cuota.objects.filter(id_cuota__in=cuotas_ids)
+        cuotas = Cuota.objects.filter(nro_cuota__in=cuotas_ids)
         monto_restante = monto_informado
 
         for cuota in cuotas:
