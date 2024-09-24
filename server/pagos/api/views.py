@@ -9,6 +9,10 @@ from rest_framework import viewsets
 from django.http import FileResponse
 import os
 
+
+from rest_framework.decorators import parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
+
 # third party imports
 from .serializers import *
 from ..paginations import *
@@ -59,7 +63,7 @@ class PagoDeUnAlumnoViewSet(APIView):
     pagination_class = PagoResultsSetPagination
     serializer_class = PagoDeUnAlumnoSerializer      
 
-
+    @parser_classes([MultiPartParser, FormParser])
     def post(self, request, alumno_id, *args, **kwargs):
 
         pago_data = request.data  
