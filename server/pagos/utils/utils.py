@@ -12,25 +12,16 @@ from ...materias.models import MateriaAlumno
 from ..models import Cuota, CompromisoDePago
 
 
-# Carga las cuotas del alumno segun las materias que este tenga
-# Se debe crear una matrícula anual y 10 cuotas mensuales, los montos son fijados en marzo, con actualización en julio.
-# Los montos dependen de si el alumno tiene 2 o mas materias o mas. Si tiene 2 o menos materias, se le cobra el monto_reducido, si tiene mas de 2 materias, se le cobra el monto_completo.
-
-# Las cuotas se deben abonar en los periodos 1-10 (con monto_comprleto o reducido) del 10-15 (monto_completo_2venc o monto_reducido__2venc)
-#  y 15-30( monto_completo_3venc o monto_reducido_3venc )
-
 def fecha_primer_vencimiento(ultimo_compromiso, mes=0):
     fecha_actual = timezone.now().date()
     anio_actual = fecha_actual.year
     mes_actual = fecha_actual.month
 
-    # Calcula el nuevo mes y ajusta el año si es necesario
     nuevo_mes = mes_actual + mes
     while nuevo_mes > 12:
         nuevo_mes -= 12
         anio_actual += 1
 
-    # Crea la nueva fecha con el día tomado de "ultimo_compromiso.fecha_vencimiento_1"
     fecha_vencimiento = date(anio_actual, nuevo_mes, ultimo_compromiso.fecha_vencimiento_1)
     return fecha_vencimiento
 
@@ -101,7 +92,7 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
     # Crea una nueva fecha con el día fijado al 10 del mes actual
     fecha_vencimiento = fecha_primer_vencimiento(ultimo_compromiso)
 
-
+    #Esto es para mantener el orden de las cuotas
     nro_cuota_ultima = nro_ultima_cuota(alumno_id)
 
 
