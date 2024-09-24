@@ -57,7 +57,7 @@ def cargar_matricula_anual(alumno_id,ultimo_compromiso):
             monto = ultimo_compromiso.matricula,
             compdepago = ultimo_compromiso,
             estado = "Impaga",
-            fecha_vencimiento = fecha_primer_vencimiento(ultimo_compromiso),
+            fecha_vencimiento = fecha_vencimiento,
             fecha_pago_devengado = timezone.now().date(),
             tipo = "Matrícula",
             alumno = alumno
