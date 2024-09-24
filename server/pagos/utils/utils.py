@@ -19,13 +19,19 @@ from ..models import Cuota, CompromisoDePago
 # Las cuotas se deben abonar en los periodos 1-10 (con monto_comprleto o reducido) del 10-15 (monto_completo_2venc o monto_reducido__2venc)
 #  y 15-30( monto_completo_3venc o monto_reducido_3venc )
 
-def fecha_primer_vencimiento(ultimo_compromiso):
+def fecha_primer_vencimiento(ultimo_compromiso, mes=0):
     fecha_actual = timezone.now().date()
     anio_actual = fecha_actual.year
     mes_actual = fecha_actual.month
 
-    # Crea una nueva fecha con el día fijado al 10 del mes actual
-    fecha_vencimiento = date(anio_actual, mes_actual, ultimo_compromiso.fecha_vencimiento_1)
+    # Calcula el nuevo mes y ajusta el año si es necesario
+    nuevo_mes = mes_actual + mes
+    while nuevo_mes > 12:
+        nuevo_mes -= 12
+        anio_actual += 1
+
+    # Crea la nueva fecha con el día tomado de "ultimo_compromiso.fecha_vencimiento_1"
+    fecha_vencimiento = date(anio_actual, nuevo_mes, ultimo_compromiso.fecha_vencimiento_1)
     return fecha_vencimiento
 
 
@@ -51,7 +57,7 @@ def cargar_matricula_anual(alumno_id,ultimo_compromiso):
             monto = ultimo_compromiso.matricula,
             compdepago = ultimo_compromiso,
             estado = "Impaga",
-            fecha_vencimiento = fecha_vencimiento ,
+            fecha_vencimiento = fecha_primer_vencimiento(ultimo_compromiso),
             fecha_pago_devengado = timezone.now().date(),
             tipo = "Matrícula",
             alumno = alumno
@@ -107,7 +113,7 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
             monto=monto,
             compdepago=ultimo_compromiso,
             estado=estado_cuota,
-            fecha_vencimiento=fecha_vencimiento,
+            fecha_vencimiento=fecha_primer_vencimiento(ultimo_compromiso,i),
             fecha_pago_devengado=timezone.now(),
             tipo="Cuota",
             alumno=alumno
