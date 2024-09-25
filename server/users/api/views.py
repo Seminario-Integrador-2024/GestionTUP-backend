@@ -1,10 +1,16 @@
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.mixins import UpdateModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+
 from server.users.models import User
-from .serializers import UserViewSetSerializer, UserDetailsSerializer
+
+from .serializers import UserDetailsSerializer
+from .serializers import UserViewSetSerializer
+
 
 class UsersViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericViewSet):
     serializer_class = UserViewSetSerializer

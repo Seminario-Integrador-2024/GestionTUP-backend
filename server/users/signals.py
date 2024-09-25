@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Group
 from django.db.models.signals import post_migrate
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import User
@@ -15,8 +16,14 @@ def post_migrate_create_superuser(sender, **kwargs):
             password="admin",
         )
 
-        # check for all users without a group
-        x = 0
-        while not User.objects.filter(groups=None).exists() and x < 1000:
-            User.objects.update(groups=Group.objects.get_or_create(name="Usuarios")[0])
-            x += 1
+
+@receiver(signal=[post_save], sender=User)
+def post_save_user(sender, instance, created, **kwargs):
+    if created:
+
+        group_name = "Alumnos"
+        if instance.is_superuser or instance.is_staff:
+            group_name = "Administradores"
+        group, _ = Group.objects.get_or_create(name=group_name)
+        instance.groups.add(group)
+        instance.save()

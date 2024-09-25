@@ -10,8 +10,8 @@ class AlumnoAdmin(admin.ModelAdmin):
     Admin class for the Alumno model.
     """
 
-    list_display = ("user__full_name", "user__dni", "legajo")
+    list_display = ("user", "user__dni", "user_id", "legajo")
     list_filter = ()
-    search_fields = ("legajo", "user__dni")
+    search_fields = ("user__dni", "user__full_name", "legajo")
     ordering = ("user",)
-    filter_horizontal = ("groups", "user_permissions")
+    filter_horizontal = ()

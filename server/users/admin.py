@@ -4,7 +4,7 @@ from .models import User
 
 
 @admin.register(User)
-class AdministradoresAdmin(admin.ModelAdmin):
+class UserAdmin(admin.ModelAdmin):
     """
     Admin class for the User model.
     """

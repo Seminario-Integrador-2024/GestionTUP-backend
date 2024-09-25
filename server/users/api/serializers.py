@@ -119,7 +119,7 @@ class UserDetailsSerializer(DRADetailsSerializer):
     class Meta:
         extra_fields = []
         model = User
-        fields = ["full_name", "groups", "roles"]
+        fields = ["full_name", "roles"]
         read_only_fields = ("dni",)
         lookup_field = "dni"
 
