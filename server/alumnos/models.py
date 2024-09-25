@@ -2,17 +2,20 @@
 
 # django imports
 
-from django.contrib.auth.models import Group
+
 from django.db import models
-from django.db.models.signals import pre_save
-from django.db.models.signals import pre_delete
-from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from server.users.models import User
 
 # Create your models here.
 
+choices = (
+    ("0", "Activo"),
+    ("1", "Inactivo"),
+    ("2", "Egresado"),
+    ("3", "Inhabilitado"),
+)
 
 class Alumno(models.Model):
     """
@@ -37,7 +40,7 @@ class Alumno(models.Model):
         default=0,
         primary_key=True,
     )
-    estado = models.CharField(max_length=255)
+    estado = models.CharField(choices=choices, default="Activo")
     legajo = models.PositiveIntegerField(_("Legajo"), unique=True, default=0)
     anio_ingreso = models.IntegerField()
     telefono = models.CharField(blank=True)
@@ -50,10 +53,13 @@ class Alumno(models.Model):
     )
 
     def __str__(self) -> str:
-        return super().__str__()
+        return self.user.full_name
+
+    def __repr__(self) -> str:
+        return __str__()
 
     def __unicode__(self):
-        return self.user.dni
+        return "%i" % self.user.dni
 
     def get_cuil(self, dni, gender):
         s = ""
@@ -74,64 +80,6 @@ class Alumno(models.Model):
     @property
     def user__dni(self):
         return self.user.dni
-
-
-# @receiver([pre_save], sender=Alumno)
-# def alumno_pre_save(sender, instance, **kwargs):
-#     """
-#     alumno_pre_save add alumno to Alumnos group.
-
-#     Args:
-#         sender (Alumno): The Alumno model.
-#         instance (Alumno): The instance of the Alumno model.
-#         created (bool): True if the instance was created, False otherwise.
-#         **kwargs: Arbitrary keyword arguments.
-#     """
-#     try:
-#         Group.objects.get(name="Alumnos")
-#     except Group.DoesNotExist:
-#         Group.objects.create(name="Alumnos")
-#     instance.user.groups.add(Group.objects.get(name="Alumnos"))
-
-
-"""
-in simple terms, the receiver decorator is used to register a signal handler.
-the add_user_to_alumno_group function is the signal handler that is registered to the post_save signal of the User model.
-the add_alumno_to_group function is the signal handler that is registered to the post_save signal of the Alumno model.
-"""
-# trigger to add user to Alumnos group if user is an Alumno
-@receiver(pre_save, sender=User)
-def add_user_to_alumno_group(sender, instance, created, **kwargs):
-    if created:
-
-        alumno_group, _ = Group.objects.get_or_create(name='Alumnos')
-        if Alumno.objects.filter(user=instance).exists():
-            instance.groups.add(alumno_group)
-
-# trigger to add alumno to Alumnos group
-@receiver(pre_save), sender=Alumno)
-def add_alumno_to_group(sender, instance, created, **kwargs):
-    if created:
-        alumno_group, _ = Group.objects.get_or_create(name='Alumnos')
-        instance.user.groups.add(alumno_group)
-
-
-
-@receiver(pre_delete, sender=Alumno)
-def alumno_pre_delete(sender, instance, **kwargs):
-    """
-    alumno_pre_delete remove alumno from Alumnos group.
-
-    Args:
-        sender (Alumno): The Alumno model.
-        instance (Alumno): The instance of the Alumno model.
-        **kwargs: Arbitrary keyword arguments.
-    """
-    user_instance = instance.user
-    if user_instance.groups.filter(name="Alumnos").exists():
-        user_instance.groups.remove("Alumnos")
-    if user_instance.groups.filter(name="Alumnos").exists():
-        user_instance.groups.remove("Alumnos")
 
 
 class Inhabilitacion(models.Model):

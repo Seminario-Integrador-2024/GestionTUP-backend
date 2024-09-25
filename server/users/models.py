@@ -2,8 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db.models import CharField
 from django.db.models import EmailField
 from django.db.models import PositiveIntegerField
-from django.dispatch import receiver
-from django.db.models.signals import post_migrate
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -27,6 +25,7 @@ class User(AbstractUser):
     )
     full_name = CharField(
         _("Full Name of User"),
+        help_text=_("Full name of the user."),
         blank=True,
         max_length=150,
         default="NonName",
@@ -47,7 +46,11 @@ class User(AbstractUser):
     # all users with matched email
 
     def __str__(self) -> str:
-        return self.email
+        return self.full_name
+
+    @property
+    def get_full_name(self) -> str:
+        return self.full_name
 
     def get_absolute_url(self) -> str:
         """Get URL for user's detail view.
@@ -57,14 +60,3 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"pk": self.dni})
-
-
-@receiver(signal=[post_migrate])
-def post_migrate_create_superuser(sender, **kwargs):
-    if not User.objects.filter(is_superuser=True).exists():
-        User.objects.create_superuser(
-            dni=12345678, email="admin@admin.com", password="admin"
-        )
-        User.objects.create_user(
-            dni=12345679, email="alumno@alumno.com", password="alumno"
-        )
