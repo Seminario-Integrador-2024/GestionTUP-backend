@@ -13,7 +13,7 @@ from ...materias.models import MateriaAlumno
 from ..models import Cuota, CompromisoDePago
 
 
-
+#comentario
 def fecha_primer_vencimiento(ultimo_compromiso, mes=0):
     fecha_actual = timezone.now().date()
     anio_actual = fecha_actual.year
@@ -31,7 +31,7 @@ def fecha_primer_vencimiento(ultimo_compromiso, mes=0):
         dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_2
     else:
         dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_3
-        
+
     ultimo_dia_mes = calendar.monthrange(anio_actual, nuevo_mes)[1]
 
     if dia_prox_vencimiento > ultimo_dia_mes:
