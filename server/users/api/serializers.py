@@ -1,11 +1,16 @@
 from dj_rest_auth.serializers import LoginSerializer as DRALoginSerializer
-from dj_rest_auth.serializers import UserDetailsSerializer as DRADetailsSerializer
+from dj_rest_auth.serializers import (
+    UserDetailsSerializer as DRADetailsSerializer,
+)
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions
 from rest_framework import serializers
 from rest_framework.serializers import CharField
 from rest_framework_simplejwt.tokens import RefreshToken
+
+# for the user model
+from server.alumnos.models import Alumno
 from server.users.models import User
 
 
@@ -14,7 +19,7 @@ class UserViewSetSerializer(serializers.ModelSerializer[User]):
         model = User
         fields = "__all__"
         extra_kwargs = {
-            "url": {"view_name": "api:user-detail", "lookup_field": "pk"},
+            "url": {"view_name": "api:user-detail", "lookup_field": "dni"},
         }
         lookup_field = "email"
 
@@ -42,8 +47,7 @@ DNI_MAX_LENGTH = 9
 
 class LoginSerializer(DRALoginSerializer):
     username = None
-    email = None
-    account = CharField(help_text="Email/Legajo/DNI")
+    email = CharField(help_text="Email/Legajo/DNI")
 
     class Meta:
         model = User
@@ -72,7 +76,7 @@ class LoginSerializer(DRALoginSerializer):
         return None
 
     def validate(self, attrs):
-        account = attrs.get("account")
+        account = attrs.get("email")
         password = attrs.get("password")
         user = None
         if "@" in account:  # login using allauth workflow
@@ -105,31 +109,26 @@ class LoginSerializer(DRALoginSerializer):
         attrs["access"] = str(refresh.access_token)
 
         # return the role of the user
-        refresh['is_staff'] = user.is_staff
-        refresh['is_superuser'] = user.is_superuser
+        refresh["is_staff"] = user.is_staff
+        refresh["is_superuser"] = user.is_superuser
 
         return attrs
 
-
 class UserDetailsSerializer(DRADetailsSerializer):
-
-    # roles es un campo personalizado que se añade a la respuesta
     roles = serializers.SerializerMethodField()
-
     class Meta:
         extra_fields = []
         model = User
-        fields = "__all__"
-        read_only_fields = ("email",)
+        fields = ["full_name", "roles"]
+        read_only_fields = ("dni",)
+        lookup_field = "dni"
 
     def get_roles(self, obj):
         roles = []
-
-        # se valida si el usuario es staff o superusuario
         if obj.is_staff:
-            roles.append('staff')
+            roles.append("staff")
         if obj.is_superuser:
-            roles.append('superuser')
-        # si dni usuario, se encuentra en la tabla alumnos, se añade el rol de alumno
-
+            roles.append("superuser")
+        if Alumno.objects.filter(user=obj).exists():
+            roles.append("alumno")
         return roles
