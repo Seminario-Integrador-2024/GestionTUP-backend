@@ -4,6 +4,7 @@ from django.db.models import Sum
 
 #python imports
 import time
+import calendar
 from datetime import date
 
 #pagos imports
@@ -12,18 +13,60 @@ from ...materias.models import MateriaAlumno
 from ..models import Cuota, CompromisoDePago
 
 
+
 def fecha_primer_vencimiento(ultimo_compromiso, mes=0):
     fecha_actual = timezone.now().date()
     anio_actual = fecha_actual.year
     mes_actual = fecha_actual.month
+    dia_actual = fecha_actual.day
 
     nuevo_mes = mes_actual + mes
     while nuevo_mes > 12:
         nuevo_mes -= 12
         anio_actual += 1
 
-    fecha_vencimiento = date(anio_actual, nuevo_mes, ultimo_compromiso.fecha_vencimiento_1)
+    if dia_actual <= ultimo_compromiso.fecha_vencimiento_1:
+        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_1
+    elif dia_actual > ultimo_compromiso.fecha_vencimiento_1 and dia_actual <= ultimo_compromiso.fecha_vencimiento_2:
+        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_2
+    else:
+        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_3
+
+    # Obtenemos el último día del mes calculado
+    ultimo_dia_mes = calendar.monthrange(anio_actual, nuevo_mes)[1]
+
+    # Si el día del próximo vencimiento es mayor que el último día del mes, ajustarlo
+    if dia_prox_vencimiento > ultimo_dia_mes:
+        dia_prox_vencimiento = ultimo_dia_mes
+
+    print(f"################## dia actual {dia_actual}, dia_prox_vencimiento {dia_prox_vencimiento}")
+
+    fecha_vencimiento = date(anio_actual, nuevo_mes, dia_prox_vencimiento)
     return fecha_vencimiento
+
+
+"""def fecha_primer_vencimiento(ultimo_compromiso, mes=0):
+    fecha_actual = timezone.now().date()
+    anio_actual = fecha_actual.year
+    mes_actual = fecha_actual.month
+    dia_actual = fecha_actual.day
+
+    nuevo_mes = mes_actual + mes
+    while nuevo_mes > 12:
+        nuevo_mes -= 12
+        anio_actual += 1
+    
+    if dia_actual <= ultimo_compromiso.fecha_vencimiento_1:
+        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_1
+    elif dia_actual > ultimo_compromiso.fecha_vencimiento_1 and dia_actual <= ultimo_compromiso.fecha_vencimiento_2:
+        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_2
+    else:
+        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_3
+    print("##################" + " dia actual ", dia_actual,  " dia_prox_vencimiento", dia_prox_vencimiento)
+
+
+    fecha_vencimiento = date(anio_actual, nuevo_mes, dia_prox_vencimiento)
+    return fecha_vencimiento"""
 
 
 def cargar_matricula_anual(alumno_id,ultimo_compromiso):
