@@ -25,12 +25,16 @@ def fecha_primer_vencimiento(ultimo_compromiso, mes=0):
         nuevo_mes -= 12
         anio_actual += 1
 
-    if dia_actual <= ultimo_compromiso.fecha_vencimiento_1:
-        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_1
-    elif dia_actual > ultimo_compromiso.fecha_vencimiento_1 and dia_actual <= ultimo_compromiso.fecha_vencimiento_2:
-        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_2
+    if mes == 1:
+        if dia_actual <= ultimo_compromiso.fecha_vencimiento_1:
+            dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_1
+        elif dia_actual > ultimo_compromiso.fecha_vencimiento_1 and dia_actual <= ultimo_compromiso.fecha_vencimiento_2:
+            dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_2
+        else:
+            dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_3
     else:
-        dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_3
+         dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_1
+
 
     ultimo_dia_mes = calendar.monthrange(anio_actual, nuevo_mes)[1]
 
