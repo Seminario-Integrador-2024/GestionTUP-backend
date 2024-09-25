@@ -222,6 +222,12 @@ def load_data(data: pd.DataFrame):
                 materia.save()
                 materia_alumno.id_alumno.save()
                 materia_alumno.save()
+            if not MateriaAlumno.objects.filter(
+                id_materia=materia_alumno.id_materia,
+                id_alumno=materia_alumno.id_alumno,
+                anio=materia_alumno.anio,
+            ).exists():
+                materia_alumno.save()
 
 
 if __name__ == "__main__":

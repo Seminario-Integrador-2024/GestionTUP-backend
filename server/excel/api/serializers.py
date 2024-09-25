@@ -1,10 +1,12 @@
 import pandas as pd
+from rest_framework.exceptions import APIException
+from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import ModelSerializer
-from rest_framework.exceptions import ValidationError, ParseError
+
 from server.excel.models import Excel
 from server.excel.utils import load_data
 from server.excel.utils import validate_excel
-from rest_framework.exceptions import APIException
 
 
 class InvalidFileContents(APIException):
@@ -15,7 +17,7 @@ class InvalidFileContents(APIException):
         detail: Invalid rows in the Excel file
     """
 
-    status_code = 200
+    status_code = 412
     default_detail = "Excel format is invalid"
     default_code = "invalid_rows"
 
