@@ -6,7 +6,7 @@ import smtplib
 from pathlib import Path
 from django.db import models
 from ...alumnos.models import Alumno
-from ..models import LineaDePago
+from ..models import LineaDePago, Cuota
 
 dotenv_path = Path(__file__).resolve().parent.parent.parent.parent / '.envs' / '.local' / '.email'
 load_dotenv(dotenv_path)
@@ -34,7 +34,10 @@ def enviar_email_de_pagos(pago):
 
     
     imagen_path = "http://localhost:8000" + datos_pago.get("ticket")
+
+    cuotas_ids = [cuota.get('nro_cuota') for cuota in datos_pago.get('cuotas', [])]
     
+    cuotas = Cuota.objects.filter(alumno=alumno,nro_cuota__in=cuotas_ids)
 
     # Extraer solo el número, estado y monto de cada cuota
     cuotas_info = []
@@ -42,7 +45,7 @@ def enviar_email_de_pagos(pago):
         nro_cuota = cuota.get('nro_cuota')
         
         # Filtrar todas las líneas de pago que pertenecen a la cuota actual
-        total_pagado_anteriormente = LineaDePago.objects.filter(cuota_id=nro_cuota).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
+        total_pagado_anteriormente = LineaDePago.objects.filter(cuota=nro_cuota).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
         
         cuota_info = {
             'nro_cuota': nro_cuota,

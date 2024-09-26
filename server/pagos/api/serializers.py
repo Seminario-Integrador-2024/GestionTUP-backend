@@ -175,7 +175,7 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             nro_transferencia = nro_transferencia
         )     
 
-        cuotas = Cuota.objects.filter(nro_cuota__in=cuotas_ids)
+        cuotas = Cuota.objects.filter(alumno=alumno,nro_cuota__in=cuotas_ids)
         monto_restante = monto_informado
 
         for cuota in cuotas:
@@ -184,6 +184,8 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
 
             # Obtener el total pagado previamente para esta cuota
             total_pagado_anteriormente = LineaDePago.objects.filter(cuota=cuota).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
+
+
 
             # Lógica para manejar los distintos casos de pago
             if cuota.estado in ['Impaga', 'Vencida']:

@@ -63,8 +63,15 @@ def cargar_matricula_anual(alumno_id,ultimo_compromiso):
 
         nro_cuota_ultima = nro_ultima_cuota(alumno_id)
 
+        """ if nro_cuota_ultima > 0:
+            valor = 1
+        else:
+            valor = 0
+            """
+
+
         Cuota.objects.create(
-            nro_cuota = nro_cuota_ultima + 1,
+            nro_cuota = nro_cuota_ultima + 1 if nro_cuota_ultima > 0 else 0,
             monto = ultimo_compromiso.matricula,
             compdepago = ultimo_compromiso,
             estado = "Impaga",
