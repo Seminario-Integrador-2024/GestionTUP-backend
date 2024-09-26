@@ -87,11 +87,10 @@ class CompromisoDePagoViewSet(viewsets.ModelViewSet):
     ordering_fields = ['anio']
     ordering = ['anio']
 
-    """    
+        
     @parser_classes([MultiPartParser, FormParser])
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
-    """
 
 
     @action(detail=True, methods=['get'], url_path='archivo')
