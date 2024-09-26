@@ -51,7 +51,7 @@ class LoginSerializer(DRALoginSerializer):
 
     class Meta:
         model = User
-        fields = ("password", "account")
+        fields = ("password",)
         extra_kwargs = {
             "password": {"write_only": True},
         }
