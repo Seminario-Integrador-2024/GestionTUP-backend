@@ -22,27 +22,25 @@ class Pago(models.Model):
 
     Attributes:
         id_pago (AutoField): The primary key for the payment.
-        descripcion (TextField): The description of the payment.
-        medio_pago (CharField): The payment method used.
         nro_recibo (IntegerField): The receipt number of the payment.
         monto (FloatField): The amount of the payment.
         estado (BooleanField): The status of the payment.
         fecha (DateField): The date of the payment.
-        comprobante (CharField): The payment receipt or proof.
         alumno (ForeignKey): The foreign key to the associated student.
-        cuota (ForeignKey): The foreign key to the associated installment.
+
     """
 
     id_pago = models.AutoField(primary_key=True)
     comentario = models.TextField(blank=True, null=True)
-    #medio_pago = models.CharField(max_length=255)
+    """
+    Se debe cambiar por id_recibo o nro_recibo dependiendo de que valor en el archivo excel 
+    sea mejorpara identificarlo univocamente
+    """
     nro_transferencia = models.IntegerField()
     monto_informado = models.FloatField()
     estado = models.CharField(blank=True, null=True)
     fecha = models.DateField()
-    #comprobante = models.CharField(max_length=255)
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
-    #compromiso_de_pago = models.FileField(upload_to='compromisos_pagos/', blank=True,  null=True)
     ticket = models.ImageField(upload_to=ticket_upload_to, blank=True, null=True)
     
     def save(self, *args, **kwargs):
@@ -99,9 +97,9 @@ class CompromisoDePago(models.Model):
     cuota_reducida = models.FloatField()
     cuota_reducida_2venc = models.FloatField()
     cuota_reducida_3venc = models.FloatField()
-    fecha_vencimiento_1 = models.IntegerField()
-    fecha_vencimiento_2 = models.IntegerField()
-    fecha_vencimiento_3 = models.IntegerField()
+    fecha_vencimiento_1 = models.IntegerField(default=10)
+    fecha_vencimiento_2 = models.IntegerField(default=15)
+    fecha_vencimiento_3 = models.IntegerField(default=29)
     comprimiso_path = models.CharField(max_length=255, blank=True, null=True)
     archivo_pdf = models.FileField(upload_to='compromisos/', blank=True,  null=True)
     fecha_ultima_modif = models.DateTimeField(max_length=10,  blank=True,  null=True)

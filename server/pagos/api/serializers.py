@@ -10,12 +10,19 @@ from ..utils.email_sender import enviar_email_de_pagos
 # Create your serializers here.
 
 class CompromisoDePagoSerializer(serializers.ModelSerializer):
+    fecha_vencimiento_1 = serializers.IntegerField(required=False)
+    fecha_vencimiento_2 = serializers.IntegerField(required=False)
+    fecha_vencimiento_3 = serializers.IntegerField(required=False)
+
     archivo_pdf = serializers.FileField(write_only=True, required=False)
     archivo_pdf_url = serializers.SerializerMethodField()
+
 
     class Meta:
         model = CompromisoDePago
         exclude = ['comprimiso_path']
+
+
 
     def get_archivo_pdf_url(self, obj):
         request = self.context.get('request')

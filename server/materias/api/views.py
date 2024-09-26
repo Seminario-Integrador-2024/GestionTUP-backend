@@ -13,9 +13,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import MateriaSerializer, AlumnoSerializer
 from rest_framework.permissions import AllowAny
+from server.materias.paginations import MateriasAlumnoResultsSetPagination
 
 # Create your views here.
 class MateriaViewSet(viewsets.ModelViewSet):
+    paginations_class = MateriasAlumnoResultsSetPagination
     lookup_field = 'codigo_materia'
     queryset: BaseManager[Materia] = Materia.objects.all()
     serializer_class = MateriaSerializer
@@ -23,8 +25,10 @@ class MateriaViewSet(viewsets.ModelViewSet):
 class MateriaAlumnoViewSet(viewsets.ModelViewSet):
     queryset: BaseManager[MateriaAlumno] =  MateriaAlumno.objects.all()
     serializer_class = MateriaAlumnoSerializer
+    paginations_class = MateriasAlumnoResultsSetPagination
 
 class MateriaViewSet(viewsets.ModelViewSet):
+    paginations_class = MateriasAlumnoResultsSetPagination
     lookup_field = 'codigo_materia'
     queryset: BaseManager[Materia] = Materia.objects.all()
     serializer_class = MateriaSerializer
