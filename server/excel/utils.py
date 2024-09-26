@@ -34,9 +34,10 @@ B. cargar archivo sysacad xls en la bbdd
 6 reporte de registros agregados de Materia_Alumno
 """
 
+import json
 import re
 from typing import TYPE_CHECKING
-import json
+
 import pandas as pd
 from django.db import transaction
 
@@ -87,7 +88,7 @@ def validate_excel(data: pd.DataFrame) -> dict:
             re.match(
                 regex_ap_no,
                 str(x),
-            )
+            ),
         ),
         "Comisión": lambda x: bool(re.compile(regex_comision).match(str(x))),
         "Materia": lambda x: bool(re.compile(regex_materia).match(str(x))),
@@ -95,7 +96,7 @@ def validate_excel(data: pd.DataFrame) -> dict:
             re.match(
                 regex_no_ma,
                 str(x),
-            )
+            ),
         ),
         "Estado": lambda x: bool(re.compile(regex_estado).match(str(x))),
         "Recursa": lambda x: bool(re.compile(regex_recursa).match(str(x))),
@@ -125,12 +126,13 @@ def validate_excel(data: pd.DataFrame) -> dict:
         return errors
 
     invalid_rows = data.apply(
-        validate_row, axis=1
+        validate_row,
+        axis=1,
     )  # Apply the validation to each row and store the errors
     invalid_rows = (  # Convert the
         # errors to a DataFrame with the column names and row numbers
         pd.DataFrame(
-            invalid_rows.tolist()  # Convert
+            invalid_rows.tolist(),  # Convert
             # the list of dictionaries to a list of lists
         )  # Convert the list of dictionaries to a DataFrame
         .stack()  # Stack the columns to get a multi-index DataFrame
@@ -145,8 +147,10 @@ def validate_excel(data: pd.DataFrame) -> dict:
     # Convert the DataFrame to a dictionary for JSON serialization
     my_dict: dict = json.loads(
         invalid_rows.pivot(
-            index="error_en_fila", columns="columna", values="columna"
-        ).to_json(orient="index")
+            index="error_en_fila",
+            columns="columna",
+            values="columna",
+        ).to_json(orient="index"),
     )
     return my_dict
 
@@ -189,6 +193,7 @@ def load_data(data: pd.DataFrame):
                 dni=row["Documento"],
                 email=row["Mail"],
                 full_name=row["Apellido y Nombres"],
+                password=row["Documento"],
             ),
             estado=row["Estado"],
             legajo=row["Legajo"],
