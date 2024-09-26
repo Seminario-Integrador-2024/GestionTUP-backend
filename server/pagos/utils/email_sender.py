@@ -45,7 +45,7 @@ def enviar_email_de_pagos(pago):
         nro_cuota = cuota.get('nro_cuota')
         
         # Filtrar todas las líneas de pago que pertenecen a la cuota actual
-        total_pagado_anteriormente = LineaDePago.objects.filter(cuota=nro_cuota).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
+        total_pagado_anteriormente = LineaDePago.objects.filter(cuota__in=cuotas).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
         
         cuota_info = {
             'nro_cuota': nro_cuota,
