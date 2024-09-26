@@ -99,7 +99,7 @@ class CompromisoDePago(models.Model):
     cuota_reducida_3venc = models.FloatField()
     fecha_vencimiento_1 = models.IntegerField(default=10)
     fecha_vencimiento_2 = models.IntegerField(default=15)
-    fecha_vencimiento_3 = models.IntegerField(default=29)
+    fecha_vencimiento_3 = models.IntegerField(default=28)
     comprimiso_path = models.CharField(max_length=255, blank=True, null=True)
     archivo_pdf = models.FileField(upload_to='compromisos/', blank=True,  null=True)
     fecha_ultima_modif = models.DateTimeField(max_length=10,  blank=True,  null=True)
