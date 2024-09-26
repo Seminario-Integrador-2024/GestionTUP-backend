@@ -44,7 +44,6 @@ from django.db import transaction
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-
 # functions definitions
 
 
@@ -166,6 +165,8 @@ def load_data(data: pd.DataFrame):
     - data (pd.DataFrame): The data to load into the database.
     """
     # models definitions
+    from django.contrib.auth.hashers import make_password
+
     from server.alumnos.models import Alumno
     from server.materias.models import Materia
     from server.materias.models import MateriaAlumno
@@ -188,13 +189,14 @@ def load_data(data: pd.DataFrame):
             row["Celular"] = "N/A"
         if pd.isna(row["Mail"]):
             row["Mail"] = "N/A"
+        user = User(
+            dni=row["Documento"],
+            email=row["Mail"],
+            full_name=row["Apellido y Nombres"],
+            password=make_password(str(row["Documento"])),
+        )
         alumno = Alumno(
-            user=User(
-                dni=row["Documento"],
-                email=row["Mail"],
-                full_name=row["Apellido y Nombres"],
-                password=row["Documento"],
-            ),
+            user=user,
             estado=row["Estado"],
             legajo=row["Legajo"],
             anio_ingreso=row["Ingr."],
@@ -219,6 +221,12 @@ def load_data(data: pd.DataFrame):
         # save the instances
         with transaction.atomic():
             if not User.objects.filter(dni=alumno.user.dni).exists():
+                User.objects.create_user(
+                    # username=None,
+                    email=user.email,
+                    password=user.password,
+                    dni=user.dni,
+                )
                 alumno.user.save()
                 alumno.save()
             if not Materia.objects.filter(

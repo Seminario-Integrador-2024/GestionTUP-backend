@@ -36,7 +36,7 @@ class UserCreateSerializer(serializers.ModelSerializer[User]):
         extra_kwargs = {
             "url": {"view_name": "api:user-detail", "lookup_field": "pk"},
         }
-        lookup_field = "email"
+        lookup_field = "dni"
 
 
 LEG_LENGTH = 5
@@ -119,7 +119,7 @@ class UserDetailsSerializer(DRADetailsSerializer):
     class Meta:
         extra_fields = []
         model = User
-        fields = ["full_name", "roles"]
+        fields = ["full_name", "roles", "dni"]
         read_only_fields = ("dni",)
         lookup_field = "dni"
 
