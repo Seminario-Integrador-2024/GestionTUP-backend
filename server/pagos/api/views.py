@@ -63,7 +63,6 @@ class PagoDeUnAlumnoViewSet(APIView):
     pagination_class = PagoResultsSetPagination
     serializer_class = PagoDeUnAlumnoSerializer      
 
-    @parser_classes([MultiPartParser, FormParser])
     def post(self, request, alumno_id, *args, **kwargs):
 
         pago_data = request.data  

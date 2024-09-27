@@ -8,11 +8,6 @@ from django.core.files import File
 
 from ..alumnos.models import Alumno
 
-def ticket_upload_to(instance, filename):
-    
-    user = instance.alumno.user_id  
-    return f'tickets/{user}/{filename}'
-
 class Pago(models.Model):
     """
     Represents a payment made by a student.
@@ -32,27 +27,15 @@ class Pago(models.Model):
 
     id_pago = models.AutoField(primary_key=True)
     comentario = models.TextField(blank=True, null=True)
-    """
-    Se debe cambiar por id_recibo o nro_recibo dependiendo de que valor en el archivo excel 
-    sea mejorpara identificarlo univocamente
-    """
-    nro_transferencia = models.IntegerField()
     monto_informado = models.FloatField()
     estado = models.CharField(blank=True, null=True)
     fecha = models.DateField()
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
-    ticket = models.ImageField(upload_to=ticket_upload_to, blank=True, null=True)
     
     def save(self, *args, **kwargs):
         self.fecha = timezone.now()
         super().save(*args, **kwargs)
 
-@receiver(post_delete, sender=Pago)
-def auto_delete_file_on_delete(sender, instance, **kwargs):
-
-    if instance.ticket:
-        if os.path.isfile(instance.ticket.path):
-            os.remove(instance.ticket.path) 
 
 class CompromisoDePago(models.Model):
     """

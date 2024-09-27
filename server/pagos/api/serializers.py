@@ -121,7 +121,7 @@ class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pago
-        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas','comentario','nro_transferencia']
+        fields = ['monto_informado', 'estado', 'fecha', 'cuotas','comentario']
 
     def get_cuotas(self, obj):
       
@@ -139,14 +139,12 @@ class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
 class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
     cuotas = serializers.ListField(write_only=True)
     monto_informado = serializers.FloatField()
-    ticket = serializers.ImageField()
     comentario = serializers.CharField(required = False, allow_blank=True)
-    nro_transferencia = serializers.IntegerField()
 
 
     class Meta:
         model = Pago
-        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket', 'comentario','nro_transferencia']
+        fields = ['alumno', 'cuotas', 'monto_informado', 'comentario']
 
     
     def get_cuotas(self, obj):
@@ -170,16 +168,13 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
         monto_informado = validated_data.pop('monto_informado')
         alumno = validated_data.pop('alumno')
         comentario = validated_data.pop('comentario')
-        nro_transferencia = validated_data.pop('nro_transferencia')
         
 
         pago = Pago.objects.create(
             monto_informado=monto_informado,
             alumno=alumno,
-            ticket=validated_data.get('ticket'),
             estado="Informado",
             comentario = comentario if comentario != '' else 'No hay comentario',
-            nro_transferencia = nro_transferencia
         )     
 
         cuotas = Cuota.objects.filter(alumno=alumno,nro_cuota__in=cuotas_ids)
@@ -198,7 +193,7 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             if cuota.estado in ['Impaga', 'Vencida']:
                 # Pago completo a una cuota impaga
                 if monto_restante >= (cuota.monto - total_pagado_anteriormente):
-                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=cuota.monto - total_pagado_anteriormente)
+                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado = cuota.monto - total_pagado_anteriormente)
                     cuota.estado = 'Pagada completamente'
                     cuota.fecha_informado = timezone.now()
                     monto_restante -= (cuota.monto - total_pagado_anteriormente)

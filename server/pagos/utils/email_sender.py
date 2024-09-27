@@ -30,10 +30,6 @@ def enviar_email_de_pagos(pago):
     monto_informado = datos_pago.get('monto_informado')
 
     comentario = datos_pago.get('comentario', 'No hay comentario')
-    nro_transferencia = datos_pago.get('nro_transferencia')
-
-    
-    imagen_path = "http://localhost:8000" + datos_pago.get("ticket")
 
     cuotas_ids = [cuota.get('nro_cuota') for cuota in datos_pago.get('cuotas', [])]
     
@@ -75,8 +71,6 @@ def enviar_email_de_pagos(pago):
     CUIL: NN-DDDDDDD-N
     Monto del pago informado: ${monto_informado}
     Comentario: {comentario}
-    Número de Transferencia: {nro_transferencia}
-    Ticket: {imagen_path}
     Nombre de la Carrera: Tecnicatura Universitaria en Programación
     Fecha: {cuota['fecha_informado']}
     Detalle de Cuotas:
@@ -91,19 +85,6 @@ def enviar_email_de_pagos(pago):
 
     body += "\nPor favor, proceder con las verificaciones correspondientes.\n\nAtentamente,\nGestiónTUP de Pagos"
 
-# Adjuntar la imagen si existe
-    if imagen_path and os.path.exists(imagen_path):
-        mime_type, _ = mimetypes.guess_type(imagen_path)
-        if mime_type:
-            maintype, subtype = mime_type.split('/')
-            print(f"Adjuntando imagen: {imagen_path} con tipo MIME: {mime_type}")
-            
-            with open(imagen_path, 'rb') as img:
-                em.add_attachment(img.read(), maintype=maintype, subtype=subtype, filename=os.path.basename(imagen_path))
-        else:
-            print(f"No se pudo determinar el tipo MIME para: {imagen_path}")
-    else:
-        print(f"La imagen no existe o la ruta no es válida: {imagen_path}")
 
     # Configurar el correo
     em = EmailMessage()
