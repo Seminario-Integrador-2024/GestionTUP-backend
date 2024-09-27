@@ -3,6 +3,8 @@
 # django imports
 
 
+from datetime import datetime
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -18,7 +20,11 @@ choices_acad = (
     ("Activo", "Activo"),
     ("Inactivo", "Inactivo"),
 )
-
+current_year = datetime.now().year
+last_year = (
+    ("1C-" + str(current_year), "1C-" + str(current_year)),
+    ("2C-" + str(current_year), "2C-" + str(current_year)),
+)
 class Alumno(models.Model):
     """
     Represents a student.
@@ -48,7 +54,11 @@ class Alumno(models.Model):
     anio_ingreso = models.IntegerField()
     telefono = models.CharField(blank=True)
     tel_res = models.CharField(blank=True)
-    ultimo_cursado = models.CharField(default="2024Hardcodeado")
+    ultimo_cursado = models.CharField(
+        auto_created=True,
+        default=last_year[0][0],
+        choices=last_year,
+    )
     celular = models.CharField(blank=True)
     gender = models.CharField(
         max_length=1,

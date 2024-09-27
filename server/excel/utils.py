@@ -220,13 +220,7 @@ def load_data(data: pd.DataFrame):
         # save the instances
         with transaction.atomic():
             if not User.objects.filter(dni=alumno.user.dni).exists():
-                User.objects.create_user(
-                    # username=None,
-                    email=user.email,
-                    password=user.password,
-                    dni=user.dni,
-                )
-                alumno.user.save()
+                user.save()
                 alumno.save()
             if not Materia.objects.filter(
                 codigo_materia=materia.codigo_materia,

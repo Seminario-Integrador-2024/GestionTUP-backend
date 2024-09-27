@@ -1,5 +1,6 @@
-from venv import logger
 from datetime import datetime
+from venv import logger
+
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models.signals import pre_delete
