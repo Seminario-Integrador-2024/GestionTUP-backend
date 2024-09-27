@@ -48,7 +48,7 @@ class Alumno(models.Model):
     anio_ingreso = models.IntegerField()
     telefono = models.CharField(blank=True)
     tel_res = models.CharField(blank=True)
-    ultimo_cursado = models.CharField(datetime.date.today().year)
+    ultimo_cursado = models.CharField(default="2024Hardcodeado")
     celular = models.CharField(blank=True)
     gender = models.CharField(
         max_length=1,
