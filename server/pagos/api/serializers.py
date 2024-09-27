@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.response import Response
 
-from ..utils.email_sender import enviar_email_de_pagos
+from ...emails_controller.email_sender import enviar_email_de_pagos
 
 # Create your serializers here.
 
