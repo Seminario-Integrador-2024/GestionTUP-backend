@@ -38,7 +38,7 @@ class ExcelCreateSerializer(ModelSerializer):
             col_header = 6
             excel_as_df = pd.read_excel(
                 io=value,
-                header=col_header - 1,
+                # header=col_header,
                 names=[
                     "Extensión",
                     "Esp.",
@@ -67,7 +67,7 @@ class ExcelCreateSerializer(ModelSerializer):
                     "Nota Final",
                     "Nombre",
                 ],
-                skiprows=col_header - 1,
+                # skiprows=col_header - 1,
                 engine="openpyxl",
             )
         except pd.errors.EmptyDataError as e:
