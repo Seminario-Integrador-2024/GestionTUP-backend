@@ -10,11 +10,13 @@ from server.users.models import User
 
 # Create your models here.
 
-choices = (
-    ("0", "Activo"),
-    ("1", "Inactivo"),
-    ("2", "Egresado"),
-    ("3", "Inhabilitado"),
+choices_fin = (
+    ("Habilitado", "Habilitado"),
+    ("Inhabilitado", "Inhabilitado"),
+)
+choices_acad = (
+    ("Activo", "Activo"),
+    ("Inactivo", "Inactivo"),
 )
 
 class Alumno(models.Model):
@@ -40,11 +42,13 @@ class Alumno(models.Model):
         default=0,
         primary_key=True,
     )
-    estado = models.CharField(choices=choices, default="Activo")
+    estado_financiero = models.CharField(choices=choices_fin, default="Habilitado")
+    estado_academico = models.CharField(choices=choices_acad, default="Activo")
     legajo = models.PositiveIntegerField(_("Legajo"), unique=True, default=0)
     anio_ingreso = models.IntegerField()
     telefono = models.CharField(blank=True)
     tel_res = models.CharField(blank=True)
+    ultimo_cursado = models.CharField(datetime.date.today().year)
     celular = models.CharField(blank=True)
     gender = models.CharField(
         max_length=1,

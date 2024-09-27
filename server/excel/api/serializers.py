@@ -38,7 +38,7 @@ class ExcelCreateSerializer(ModelSerializer):
             col_header = 6
             excel_as_df = pd.read_excel(
                 io=value,
-                # header=col_header,
+                header=col_header,
                 names=[
                     "Extensión",
                     "Esp.",

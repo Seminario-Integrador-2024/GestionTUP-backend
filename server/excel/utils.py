@@ -197,7 +197,6 @@ def load_data(data: pd.DataFrame):
         )
         alumno = Alumno(
             user=user,
-            estado=row["Estado"],
             legajo=row["Legajo"],
             anio_ingreso=row["Ingr."],
             tel_res=row["Tel. Resid"],
