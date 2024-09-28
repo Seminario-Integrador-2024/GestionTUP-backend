@@ -198,11 +198,23 @@ class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
 
 class CuotasImpagasDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
-    queryset: BaseManager[Cuota] = Cuota.objects.filter(estado__in=["Impaga","Vencida","Pagada parcialmente"])
     serializer_class = CuotaDeUnAlumnoSerializer
     pagination_class = CuotasResultSetPagination
 
+    def get_queryset(self):
+        alumno_id = self.kwargs.get('alumno_id')
+        if not alumno_id:
+            return Cuota.objects.none()
+
+        # Filtrar las cuotas impagas y excluir aquellas con pagos no confirmados
+        return Cuota.objects.filter(
+            alumno_id=alumno_id
+            #estado__in=["Impaga", "Vencida", "Pagada parcialmente"]
+        ).exclude(
+            lineadepago__pago__estado="Confirmado"  # Excluir pagos no confirmados
+        ).distinct()
+
     def list(self, request, alumno_id=None):
-        queryset = self.get_queryset().filter(alumno_id=alumno_id)
+        queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

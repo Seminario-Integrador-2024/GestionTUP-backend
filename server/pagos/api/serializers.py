@@ -88,6 +88,10 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
     valorpagado = serializers.SerializerMethodField()
     valorinformado = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Cuota
+        fields = ['numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado']
+
     def get_valorinformado(self, instance):
         # Buscar el monto aplicado a esta cuota a través de LineaDePago
         linea_pagos = LineaDePago.objects.filter(cuota=instance)
@@ -113,16 +117,9 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
         else:
             return 0
 
-
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         return representation
-
-    class Meta:
-        model = Cuota
-        fields = ['numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado']
-
 
 
 
