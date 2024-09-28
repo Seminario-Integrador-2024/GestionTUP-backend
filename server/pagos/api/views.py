@@ -205,13 +205,11 @@ class CuotasImpagasDeUnAlumnoViewSet(viewsets.ModelViewSet):
         alumno_id = self.kwargs.get('alumno_id')
         if not alumno_id:
             return Cuota.objects.none()
-
-        # Filtrar las cuotas impagas y excluir aquellas con pagos no confirmados
+            
         return Cuota.objects.filter(
             alumno_id=alumno_id
-            #estado__in=["Impaga", "Vencida", "Pagada parcialmente"]
         ).exclude(
-            lineadepago__pago__estado="Confirmado"  # Excluir pagos no confirmados
+            lineadepago__pago__estado="Confirmado" 
         ).distinct()
 
     def list(self, request, alumno_id=None):

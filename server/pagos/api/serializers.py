@@ -104,6 +104,7 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
         # Obtener todos los pagos correspondientes a estas líneas de pago
         pagos = Pago.objects.filter(id_pago__in=[linea_pago.pago.id_pago for linea_pago in linea_pagos])
         
+        #Verificar estado de todos los pagos correspondientes a una cuota
         confirmado = True
         for pago in pagos:
             if pago.estado != "Confirmado":
