@@ -15,6 +15,7 @@ from server.pagos.api.views import FirmasDeUnAlumnoView
 from server.pagos.api.views import CuotaDeUnAlumnoViewSet
 from server.pagos.api.views import PagoDeUnAlumnoViewSet 
 from server.pagos.api.views import PagoDeUnAlumnoRetrieveViewSet
+from server.pagos.api.views import CuotasImpagasDeUnAlumnoViewSet
 
 # agregar las vistas de de cada app en forma de router.
 # el import debe seguir el siguiente formato:
@@ -49,8 +50,10 @@ url_pagos = [
     path("firmas/firmas-de-alumno/<int:alumno_id>/", FirmasDeUnAlumnoView.as_view({"get": "list"}), name="firmas-de-alumno"),
     path("firmas/firmar-compromiso/<int:alumno_id>/", FirmarCompromisoView.as_view(),name="firmar-compromiso"),
     path("cuotas/alumno/<int:alumno_id>/", CuotaDeUnAlumnoViewSet.as_view({"get": "list"}), name="cuotas-de-alumno"),
+    path("cuotas/alumno/<int:alumno_id>/impagas/", CuotasImpagasDeUnAlumnoViewSet.as_view({"get": "list"}), name="cuotas-impagas-de-alumno"),
     path("pagos/alumno/<int:alumno_id>",PagoDeUnAlumnoViewSet.as_view(), name = "pago-de-un-alumno"),
     path("pagos/alumno/resumen_pagos/<int:alumno_id>",PagoDeUnAlumnoRetrieveViewSet.as_view({"get": "list"}), name = "pago-de-un-alumno-retrive"),
+        
 ]
 
 

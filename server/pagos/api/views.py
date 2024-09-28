@@ -188,8 +188,19 @@ class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
     queryset: BaseManager[Cuota] = Cuota.objects.all()
     serializer_class = CuotaDeUnAlumnoSerializer
-    pagination_class = PagoResultsSetPagination
+    pagination_class = CuotasResultSetPagination
     
+
+    def list(self, request, alumno_id=None):
+        queryset = self.get_queryset().filter(alumno_id=alumno_id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class CuotasImpagasDeUnAlumnoViewSet(viewsets.ModelViewSet):
+    lookup_field = 'alumno_id'
+    queryset: BaseManager[Cuota] = Cuota.objects.filter(estado__in=["Impaga","Vencida","Pagada parcialmente"])
+    serializer_class = CuotaDeUnAlumnoSerializer
+    pagination_class = CuotasResultSetPagination
 
     def list(self, request, alumno_id=None):
         queryset = self.get_queryset().filter(alumno_id=alumno_id)
