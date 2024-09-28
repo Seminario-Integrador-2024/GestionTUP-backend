@@ -17,7 +17,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import *
 from ..paginations import *
 #utils imports
-from ..utils.utils import generar_cuotas
+from ..utils import generar_cuotas
 
 class PagoViewSet(viewsets.ModelViewSet):
     queryset : BaseManager[Pago] = Pago.objects.all()

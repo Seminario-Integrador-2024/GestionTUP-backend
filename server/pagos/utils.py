@@ -8,9 +8,9 @@ import calendar
 from datetime import date
 
 #pagos imports
-from ...alumnos.models import Alumno
-from ...materias.models import MateriaAlumno
-from ..models import Cuota, CompromisoDePago
+from ..alumnos.models import Alumno
+from ..materias.models import MateriaAlumno
+from .models import Cuota, CompromisoDePago
 
 
 #comentario

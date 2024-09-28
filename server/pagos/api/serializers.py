@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.response import Response
 
-from ...emails_controller.email_sender import enviar_email_de_pagos
+from ...emails_controller.email_sender import enviar_mail_del_pago_a_tosoreria
 
 # Create your serializers here.
 
@@ -218,6 +218,6 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             cuota.save()
 
         #Mandar el email a tesoeria
-        enviar_email_de_pagos(pago)
+        enviar_mail_del_pago_a_tosoreria(pago)
 
         return pago
