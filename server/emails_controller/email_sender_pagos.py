@@ -74,6 +74,7 @@ def tomar_datos_del_pago(pago):
     return  {'subject': subject, 'body': body}
 
 
+
 def enviar_mail_del_pago_a_tosoreria(pago):
     #Armar el contenido del mail
     contenido = tomar_datos_del_pago(pago)
@@ -83,6 +84,3 @@ def enviar_mail_del_pago_a_tosoreria(pago):
     enviar_email(email)
 
 
-
-def enviar_email_de_aviso_de_vencimiento():
-    pass

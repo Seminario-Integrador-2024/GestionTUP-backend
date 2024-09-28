@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.response import Response
 
-from ...emails_controller.email_sender import enviar_mail_del_pago_a_tosoreria
+from ...emails_controller.email_sender_pagos import enviar_mail_del_pago_a_tosoreria
 
 # Create your serializers here.
 
@@ -93,10 +93,27 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
         linea_pagos = LineaDePago.objects.filter(cuota=instance)
         return sum(linea_pago.monto_aplicado for linea_pago in linea_pagos)
     
-    def get_valorpagado(self, instance):
-        # Sumar todos los montos aplicados a esta cuota a través de LineaDePago
+    def get_valorpagado(self, instance):    
+        # Obtener todos los LineaDePago asociados a esta cuota
         linea_pagos = LineaDePago.objects.filter(cuota=instance)
-        return sum(linea_pago.monto_aplicado for linea_pago in linea_pagos)
+        
+        # Obtener todos los pagos correspondientes a estas líneas de pago
+        pagos = Pago.objects.filter(id_pago__in=[linea_pago.pago.id_pago for linea_pago in linea_pagos])
+        
+        confirmado = True
+        for pago in pagos:
+            if pago.estado != "Confirmado":
+                confirmado = False
+        
+        # Sumar el monto aplicado por cuota
+        total_pagado_por_cuota = sum(linea_pago.monto_aplicado for linea_pago in linea_pagos)
+        
+        if confirmado:
+            return total_pagado_por_cuota
+        else:
+            return 0
+
+
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -165,7 +182,7 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
         cuotas_ids_str = ','.join(map(str, cuotas_ids_str))
         cuotas_ids = [int(id_str) for id_str in cuotas_ids_str.split(',')]
 
-        monto_informado = validated_data.pop('monto_informado')
+        monto_informado = float(validated_data.pop('monto_informado'))
         alumno = validated_data.pop('alumno')
         comentario = validated_data.pop('comentario')
         
