@@ -13,6 +13,7 @@ from server.users.models import User
 from server.materias.models import Materia
 
 
+
 class AlumnoRetrieveSerializer(serializers.ModelSerializer):
     alumno_link = serializers.SerializerMethodField()
     dni = serializers.IntegerField(source="user.dni", read_only=True)
@@ -48,6 +49,16 @@ class AlumnoCreateSerializer(serializers.ModelSerializer[Alumno]):
         user_instance.save()
         # create alumno instance and link it to user
         return Alumno.objects.create(user=user_instance, **validated_data)
+
+
+
+class AlumnosPagYNoCuotaSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source="user.full_name", read_only=True)
+
+    class Meta:
+        model = Alumno
+        fields = ["user","full_name","estado_financiero"]
+
 
 
 class InhabilitacionSerializer(serializers.ModelSerializer):
