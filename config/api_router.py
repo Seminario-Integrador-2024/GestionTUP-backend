@@ -59,8 +59,8 @@ url_pagos = [
 ]
 
 url_alumnos = [
-    path('alumnos/pagaron-cuota/<int:nro_cuota>/', AlumnosQuePagaronCuotaViewSet.as_view({'get': 'list'}), name = "alumnos-pagaron-cuota"),
-    path('alumnos/no-pagaron-cuota/<int:nro_cuota>/', AlumnosQueNoPagaronCuotaViewSet.as_view({'get': 'list'}), name = "alumnos-no-pagaron-cuota"),
+    path('alumnos/pagaron-cuota/<str:mes_anio>/', AlumnosQuePagaronCuotaViewSet.as_view({'get': 'list'}), name = "alumnos-pagaron-cuota"),
+    path('alumnos/no-pagaron-cuota/<str:mes_anio>/', AlumnosQueNoPagaronCuotaViewSet.as_view({'get': 'list'}), name = "alumnos-no-pagaron-cuota"),
 
 ]
 
