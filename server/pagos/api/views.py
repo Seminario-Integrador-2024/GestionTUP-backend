@@ -154,14 +154,20 @@ class UltimoCompromisoDePagoViewSet(APIView):
   
 
 
-class FirmasDeUnAlumnoView(viewsets.ViewSet):
+class FirmasDeUnAlumnoView(viewsets.ReadOnlyModelViewSet):
 
     pagination_class = FirmasResultSetPagination
 
     def list(self, request, alumno_id=None):
         firmas_comp_todas = FirmaCompPagoAlumno.objects.filter(alumno_id=alumno_id)
         ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
-        
+
+        # Aplicar paginación
+        page = self.paginate_queryset(firmas_comp_todas)
+        if page is not None:
+            serializer = FirmaCompPagoAlumnoSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         serializer = FirmaCompPagoAlumnoSerializer(firmas_comp_todas, many=True)
         data = serializer.data
         
@@ -171,6 +177,8 @@ class FirmasDeUnAlumnoView(viewsets.ViewSet):
                 compromiso_de_pago=ultimo_compromiso
             ).exists()
         
+
+
         return Response(data)
 
 class CuotaViewSet(viewsets.ModelViewSet):

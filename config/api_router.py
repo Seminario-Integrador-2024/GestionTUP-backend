@@ -3,6 +3,8 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.routers import SimpleRouter
 from django.urls import path, include
 from server.alumnos.api.views import AlumnosViewSet
+from server.alumnos.api.views import AlumnosQuePagaronCuotaViewSet
+from server.alumnos.api.views import AlumnosQueNoPagaronCuotaViewSet
 from server.excel.api.views import ExcelViewSet
 from server.materias.api.views import MateriaViewSet
 from server.pagos.api.views import CompromisoDePagoViewSet
@@ -56,5 +58,11 @@ url_pagos = [
         
 ]
 
+url_alumnos = [
+    path('alumnos/pagaron-cuota/<str:mes_anio>/', AlumnosQuePagaronCuotaViewSet.as_view({'get': 'list'}), name = "alumnos-pagaron-cuota"),
+    path('alumnos/no-pagaron-cuota/<str:mes_anio>/', AlumnosQueNoPagaronCuotaViewSet.as_view({'get': 'list'}), name = "alumnos-no-pagaron-cuota"),
+
+]
 
 urlpatterns = router.urls + url_pagos
+urlpatterns += url_alumnos
