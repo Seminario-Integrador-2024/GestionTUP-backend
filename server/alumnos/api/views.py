@@ -61,6 +61,10 @@ class AlumnosViewSet(viewsets.ModelViewSet):
 class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
     pagination_class = AlumnoResultsSetPagination
     
+    def get_queryset(self):
+        # Este método es obligatorio para ModelViewSet, pero no lo utilizaremos en este caso.
+        return Alumno.objects.none()
+
     def list(self, request, mes_anio=None):
         try:
             # Dividir el parámetro para obtener el número de cuota y el año
@@ -115,6 +119,10 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
 
     pagination_class = AlumnoResultsSetPagination
     
+    def get_queryset(self):
+        # Este método es obligatorio para ModelViewSet, pero no lo utilizaremos en este caso.
+        return Alumno.objects.none()
+
     def list(self, request, mes_anio=None):
         try:
             # Dividir el parámetro para obtener el número de cuota y el año
@@ -159,6 +167,7 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
         if page is not None:
             serializer = AlumnosPagYNoCuotaSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
+
 
         # Serializar los datos
         serializer = AlumnosPagYNoCuotaSerializer(alumnos_sin_pago, many=True)

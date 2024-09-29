@@ -57,7 +57,7 @@ class AlumnosPagYNoCuotaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Alumno
-        fields = ["user","full_name","estado_financiero"]
+        fields = ["user","full_name","estado_financiero","legajo"]
 
 
 
