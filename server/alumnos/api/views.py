@@ -60,6 +60,10 @@ class AlumnosViewSet(viewsets.ModelViewSet):
 #http:/localhost:8080/alumnos/pagaron-cuota/<cuota_anio>/
 class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
     pagination_class = AlumnoResultsSetPagination
+    filter_backends = [OrderingFilter]  # Agregar el backend de ordenación
+    ordering_fields = ['full_name']     # Especificar los campos por los que se puede ordenar
+    ordering = ['full_name']            # Ordenar por defecto por 'full_name'
+
     
     def get_queryset(self):
         # Este método es obligatorio para ModelViewSet, pero no lo utilizaremos en este caso.
@@ -100,7 +104,7 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
         alumnos_con_pago = alumnos_activos.filter(
             cuota__lineadepago__cuota__id_cuota__in=cuota_ids, 
             pago__lineadepago__pago__estado="Confirmado"
-        ).distinct()
+        ).order_by("user__full_name").distinct()
 
         # Aplicar paginación
         page = self.paginate_queryset(alumnos_con_pago)
@@ -118,7 +122,11 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
 class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
 
     pagination_class = AlumnoResultsSetPagination
-    
+    filter_backends = [OrderingFilter]  # Agregar el backend de ordenación
+    ordering_fields = ['full_name']     # Especificar los campos por los que se puede ordenar
+    ordering = ['full_name']            # Ordenar por defecto por 'full_name'
+
+
     def get_queryset(self):
         # Este método es obligatorio para ModelViewSet, pero no lo utilizaremos en este caso.
         return Alumno.objects.none()
@@ -159,7 +167,7 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
         alumnos_sin_pago = alumnos_activos.exclude(
             cuota__lineadepago__cuota__id_cuota__in=cuota_ids,
             pago__lineadepago__pago__estado="Confirmado"
-        ).distinct()
+        ).order_by("user__full_name").distinct()
 
 
         # Aplicar paginación
