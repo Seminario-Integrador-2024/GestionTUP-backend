@@ -98,6 +98,12 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
             pago__lineadepago__pago__estado="Confirmado"
         ).distinct()
 
+        # Aplicar paginación
+        page = self.paginate_queryset(alumnos_con_pago)
+        if page is not None:
+            serializer = AlumnosPagYNoCuotaSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         # Serializar los datos
         serializer = AlumnosPagYNoCuotaSerializer(alumnos_con_pago, many=True)
         return Response(serializer.data)
@@ -146,6 +152,13 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
             cuota__lineadepago__cuota__id_cuota__in=cuota_ids,
             pago__lineadepago__pago__estado="Confirmado"
         ).distinct()
+
+
+        # Aplicar paginación
+        page = self.paginate_queryset(alumnos_sin_pago)
+        if page is not None:
+            serializer = AlumnosPagYNoCuotaSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
         # Serializar los datos
         serializer = AlumnosPagYNoCuotaSerializer(alumnos_sin_pago, many=True)
