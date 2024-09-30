@@ -8,7 +8,8 @@ from .api.views import CuotaViewSet
 from .api.views import FirmarCompromisoView
 from .api.views import FirmasDeUnAlumnoView
 from .api.views import PagoViewSet
-from .api.views import UltimoCompromisoDePagoViewSet
+from .api.views import AlumnosFirmaronUltimoCompromisoView
+from .api.views import AlumnosNoFirmaronUltimoCompromisoView
 
 router = DefaultRouter()
 """router.register(r"compromisos", CompromisoDePagoViewSet, basename="compromisos")
@@ -34,6 +35,16 @@ urlpatterns = [
         "firmar-compromiso/<int:alumno_id>/",
         FirmarCompromisoView.as_view(),
         name="firmar-compromiso",
+    ),
+    path(
+        "alumnos-firmaron-ultimo-compromiso/",
+        AlumnosFirmaronUltimoCompromisoView.as_view({"get": "list"}),
+        name="alumnos-firmaron-ultimo-compromiso",
+    ),
+    path(
+        "alumnos-no-firmaron-ultimo-compromiso/",
+        AlumnosNoFirmaronUltimoCompromisoView.as_view({"get": "list"}),
+        name="alumnos-no-firmaron-ultimo-compromiso",
     ),
 ]
 
