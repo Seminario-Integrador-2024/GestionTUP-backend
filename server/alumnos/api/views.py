@@ -92,7 +92,7 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
         alumnos_activos = Alumno.objects.filter(estado_academico="Activo")
 
         # Obtener cuotas que correspondan al mes y año proporcionados
-        cuotas = Cuota.objects.filter(fecha_vencimiento__range=(fecha_inicio, fecha_fin))
+        cuotas = Cuota.objects.filter(fecha_vencimiento__range=(fecha_inicio, fecha_fin),estado="Pagada completamente")
 
         if not cuotas.exists():
             return Response({"error": "No existen cuotas para el mes y año especificados."}, status=status.HTTP_404_NOT_FOUND)
@@ -154,8 +154,8 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
         alumnos_activos = Alumno.objects.filter(estado_academico="Activo")
 
         # Obtener cuotas que correspondan al mes y año proporcionados
-        cuotas = Cuota.objects.filter(fecha_vencimiento__range=(fecha_inicio, fecha_fin),
-                                        estado__in = ["Vencida","Impaga","Pagada parcialmente"])
+        cuotas = Cuota.objects.filter(fecha_vencimiento__range=(fecha_inicio, fecha_fin),estado__in=["Pagada parcialmente","Vencida","Impaga"])
+        
         if not cuotas.exists():
             return Response({"error": "No existen cuotas para el mes y año especificados."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -166,7 +166,7 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
         # relacionar los alumnos_activos con sus cuotas sabiendo que cuotas tiene alumno_id
         alumnos_sin_pago = alumnos_activos.exclude(
             cuota__lineadepago__cuota__id_cuota__in=cuota_ids,
-            pago__lineadepago__pago__estado="Confirmado"
+            pago__lineadepago__pago__estado__in=["Confimado"]
         ).order_by("user__full_name").distinct()
 
 
