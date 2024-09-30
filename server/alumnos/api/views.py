@@ -24,6 +24,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 # Create your views her
 import datetime
+from django.db.models import Q
+
 
 class AlumnosViewSet(viewsets.ModelViewSet):
     lookup_field = "user__dni"
@@ -57,7 +59,7 @@ class AlumnosViewSet(viewsets.ModelViewSet):
 
 
 
-#http:/localhost:8080/alumnos/pagaron-cuota/<cuota_anio>/
+#http:/localhost:8080/alumnos/pagaron-cuota/<mes_anio>/
 class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
     pagination_class = AlumnoResultsSetPagination
     filter_backends = [OrderingFilter]  # Agregar el backend de ordenación
@@ -92,10 +94,12 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
         alumnos_activos = Alumno.objects.filter(estado_academico="Activo")
 
         # Obtener cuotas que correspondan al mes y año proporcionados
-        cuotas = Cuota.objects.filter(fecha_vencimiento__range=(fecha_inicio, fecha_fin),estado="Pagada completamente")
+        cuotas = Cuota.objects.filter(fecha_vencimiento__range=(fecha_inicio, fecha_fin), 
+                                        estado__in=["Pagada completamente"])
 
         if not cuotas.exists():
-            return Response({"error": "No existen cuotas para el mes y año especificados."}, status=status.HTTP_404_NOT_FOUND)
+            return Response([], status=status.HTTP_200_OK)
+            #return Response({"error": "No existen cuotas para el mes y año especificados."}, status=status.HTTP_404_NOT_FOUND)
 
         # Obtener los IDs de las cuotas
         cuota_ids = cuotas.values_list('id_cuota', flat=True)
@@ -103,7 +107,7 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
         # Filtrar alumnos que han pagado alguna de esas cuotas
         alumnos_con_pago = alumnos_activos.filter(
             cuota__lineadepago__cuota__id_cuota__in=cuota_ids, 
-            pago__lineadepago__pago__estado="Confirmado"
+            cuota__lineadepago__pago__estado = "Confirmado"
         ).order_by("user__full_name").distinct()
 
         # Aplicar paginación
@@ -118,7 +122,7 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
 
 
 
-#http:/localhost:8080/alumnos/no-pagaron-cuota/<cuota_anio>/
+#http:/localhost:8080/alumnos/no-pagaron-cuota/<mes_anio>/
 class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
 
     pagination_class = AlumnoResultsSetPagination
@@ -154,20 +158,41 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
         alumnos_activos = Alumno.objects.filter(estado_academico="Activo")
 
         # Obtener cuotas que correspondan al mes y año proporcionados
-        cuotas = Cuota.objects.filter(fecha_vencimiento__range=(fecha_inicio, fecha_fin),estado__in=["Pagada parcialmente","Vencida","Impaga"])
-        
+        cuotas = Cuota.objects.filter(
+            fecha_vencimiento__range=(fecha_inicio, fecha_fin),
+            alumno__in=alumnos_activos)
+
+        print("$$$$$$$$$$$$$$$$$$$$$ cuotas",cuotas[0].id_cuota, cuotas[1].id_cuota,cuotas[2].id_cuota)
         if not cuotas.exists():
             return Response({"error": "No existen cuotas para el mes y año especificados."}, status=status.HTTP_404_NOT_FOUND)
 
         # Obtener los IDs de las cuotas
         cuota_ids = cuotas.values_list('id_cuota', flat=True)
+        print("$$$$$$$$$$$$$$$$$$$$$ cuota_ids",cuota_ids)
 
-        # Filtrar alumnos que han pagado alguna de esas cuotas
-        # relacionar los alumnos_activos con sus cuotas sabiendo que cuotas tiene alumno_id
+        # Obtener los alumnos que han pagado completamente las cuotas con pagos confirmados
+        alumnos_con_pago_confirmado = alumnos_activos.filter(
+            Q(cuota__id_cuota__in=cuota_ids) &  # Cuotas 6 y 12
+            Q(cuota__estado__in=["Pagada completamente","Pagada parcialmente"]) &  # Estado de la cuota
+            Q(cuota__lineadepago__pago__estado="Confirmado")  # Pago confirmado para la cuota en cuestión
+        ).distinct()
+
+        # Verifica cuántos alumnos han pagado completamente
+        print("Alumnos con pago confirmado:", alumnos_con_pago_confirmado.count())
+
+        # Filtrar alumnos que no han pagado la cuota 1-2025
         alumnos_sin_pago = alumnos_activos.exclude(
-            cuota__lineadepago__cuota__id_cuota__in=cuota_ids,
-            pago__lineadepago__pago__estado__in=["Confimado"]
+            # Excluir alumnos que han pagado completamente las cuotas 6 y 12
+            Q(user__in=alumnos_con_pago_confirmado.values_list('user', flat=True))
+        ).exclude(
+            # Excluir cuotas que están "Pagadas parcialmente" sin importar el estado de los pagos
+            Q(cuota__id_cuota__in=cuota_ids) &  # Cuotas 6 y 12
+            Q(cuota__estado__in="Pagada parcialmente")  # Solo estado de la cuota
         ).order_by("user__full_name").distinct()
+
+        # Verifica cuántos alumnos quedan sin pago
+        print("Alumnos sin pago:", alumnos_sin_pago.count())
+
 
 
         # Aplicar paginación
