@@ -14,9 +14,11 @@ from server.pagos.api.views import PagoViewSet
 from server.pagos.api.views import UltimoCompromisoDePagoViewSet
 from server.pagos.api.views import FirmarCompromisoView
 from server.pagos.api.views import FirmasDeUnAlumnoView
+from server.pagos.api.views import AlumnosFirmaronUltimoCompromisoView
 from server.pagos.api.views import CuotaDeUnAlumnoViewSet
 from server.pagos.api.views import PagoDeUnAlumnoViewSet 
 from server.pagos.api.views import PagoDeUnAlumnoRetrieveViewSet
+from server.pagos.api.views import AlumnosNoFirmaronUltimoCompromisoView
 from server.pagos.api.views import CuotasImpagasDeUnAlumnoViewSet
 
 # agregar las vistas de de cada app en forma de router.
@@ -51,6 +53,8 @@ url_pagos = [
     path("ultimo-compromiso-de-pago/", UltimoCompromisoDePagoViewSet.as_view(), name="ultimo-compromiso-de-pago"),
     path("firmas/firmas-de-alumno/<int:alumno_id>/", FirmasDeUnAlumnoView.as_view({"get": "list"}), name="firmas-de-alumno"),
     path("firmas/firmar-compromiso/<int:alumno_id>/", FirmarCompromisoView.as_view(),name="firmar-compromiso"),
+    path("firmantes/alumnos-firmaron-ultimo-compromiso/", AlumnosFirmaronUltimoCompromisoView.as_view({'get': 'list'}), name="alumnos-firmaron-ultimo-compromiso"),
+    path("firmantes/alumnos-no-firmaron-ultimo-compromiso/", AlumnosNoFirmaronUltimoCompromisoView.as_view({'get': 'list'}), name="alumnos-no-firmaron-ultimo-compromiso"),
     path("cuotas/alumno/<int:alumno_id>/", CuotaDeUnAlumnoViewSet.as_view({"get": "list"}), name="cuotas-de-alumno"),
     path("cuotas/alumno/<int:alumno_id>/impagas/", CuotasImpagasDeUnAlumnoViewSet.as_view({"get": "list"}), name="cuotas-impagas-de-alumno"),
     path("pagos/alumno/<int:alumno_id>",PagoDeUnAlumnoViewSet.as_view(), name = "pago-de-un-alumno"),

@@ -78,6 +78,55 @@ class FirmaCompPagoAlumnoSerializer(serializers.ModelSerializer):
             return f"{cuatrimestre}/{anio:02}" 
         return None
 
+class FirmaCompPagoAlumnoCompletoSerializer(serializers.ModelSerializer):
+    compromiso_de_pago = serializers.SerializerMethodField()
+
+    dni = serializers.IntegerField(source="alumno.user.dni", read_only=True)
+    email = serializers.EmailField(source="alumno.user.email", read_only=True)
+    full_name = serializers.CharField(source="alumno.user.full_name", read_only=True)
+    legajo = serializers.CharField(source="alumno.legajo", read_only=True)
+
+    class Meta:
+        model = FirmaCompPagoAlumno
+        fields = [
+            "id",
+            "dni", 
+            "email", 
+            "full_name", 
+            "legajo",
+            "firmado",
+            "compromiso_de_pago",
+            "fecha_firmado",
+        ]
+
+    def get_compromiso_de_pago(self, obj):
+        compromiso = obj.compromiso_de_pago
+        
+        if compromiso:
+            anio = compromiso.anio.year % 100 
+            cuatrimestre = str(compromiso.cuatrimestre).zfill(2)  
+            
+            return f"{cuatrimestre}/{anio:02}" 
+        return None
+    
+class AlumnoSerializer(serializers.ModelSerializer):
+    dni = serializers.IntegerField(source="user.dni", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+    full_name = serializers.CharField(source="user.full_name", read_only=True)
+    class Meta:
+        model = Alumno
+        fields = [
+            "dni", 
+            "email", 
+            "full_name", 
+            "legajo", 
+            "estado", 
+            "anio_ingreso", 
+            "telefono", 
+            "tel_res", 
+            "celular", 
+            "gender"
+        ]
 
 class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
     numero = serializers.IntegerField(source='nro_cuota')
