@@ -8,9 +8,9 @@ import calendar
 from datetime import date
 
 #pagos imports
-from ...alumnos.models import Alumno
-from ...materias.models import MateriaAlumno
-from ..models import Cuota, CompromisoDePago
+from ..alumnos.models import Alumno
+from ..materias.models import MateriaAlumno
+from .models import Cuota, CompromisoDePago
 
 
 #comentario
@@ -25,7 +25,7 @@ def fecha_primer_vencimiento(ultimo_compromiso, mes=0):
         nuevo_mes -= 12
         anio_actual += 1
 
-    if mes == 1:
+    if mes == 0:
         if dia_actual <= ultimo_compromiso.fecha_vencimiento_1:
             dia_prox_vencimiento = ultimo_compromiso.fecha_vencimiento_1
         elif dia_actual > ultimo_compromiso.fecha_vencimiento_1 and dia_actual <= ultimo_compromiso.fecha_vencimiento_2:
@@ -63,12 +63,13 @@ def cargar_matricula_anual(alumno_id,ultimo_compromiso):
 
         nro_cuota_ultima = nro_ultima_cuota(alumno_id)
 
+
         Cuota.objects.create(
-            nro_cuota = nro_cuota_ultima + 1,
+            nro_cuota = nro_cuota_ultima + 1 if nro_cuota_ultima > 0 else 0,
             monto = ultimo_compromiso.matricula,
             compdepago = ultimo_compromiso,
             estado = "Impaga",
-            fecha_vencimiento = fecha_vencimiento,
+            fecha_vencimiento = fecha_primer_vencimiento(ultimo_compromiso),
             fecha_pago_devengado = timezone.now().date(),
             tipo = "Matrícula",
             alumno = alumno
@@ -110,7 +111,7 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
     cargar_matricula_anual(alumno_id,ultimo_compromiso)
 
     # Crea una nueva fecha con el día fijado al 10 del mes actual
-    fecha_vencimiento = fecha_primer_vencimiento(ultimo_compromiso)
+    #fecha_vencimiento = fecha_primer_vencimiento(ultimo_compromiso)
 
     #Esto es para mantener el orden de las cuotas
     nro_cuota_ultima = nro_ultima_cuota(alumno_id)
@@ -118,9 +119,9 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
 
 
     # Crear 5 cuotas mensuales 
-    for i in range(1, 6):
+    for i in range(0, 5):
         Cuota.objects.create(
-            nro_cuota=nro_cuota_ultima+i,
+            nro_cuota=nro_cuota_ultima+i+1,
             monto=monto,
             compdepago=ultimo_compromiso,
             estado=estado_cuota,

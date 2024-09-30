@@ -10,7 +10,6 @@ from rest_framework.serializers import CharField
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # for the user model
-from server.alumnos.models import Alumno
 from server.users.models import User
 
 
@@ -36,7 +35,7 @@ class UserCreateSerializer(serializers.ModelSerializer[User]):
         extra_kwargs = {
             "url": {"view_name": "api:user-detail", "lookup_field": "pk"},
         }
-        lookup_field = "email"
+        lookup_field = "dni"
 
 
 LEG_LENGTH = 5
@@ -51,7 +50,7 @@ class LoginSerializer(DRALoginSerializer):
 
     class Meta:
         model = User
-        fields = ("password", "account")
+        fields = ("password",)
         extra_kwargs = {
             "password": {"write_only": True},
         }
@@ -107,28 +106,15 @@ class LoginSerializer(DRALoginSerializer):
         attrs["user"] = user
         attrs["refresh"] = str(refresh)
         attrs["access"] = str(refresh.access_token)
-
-        # return the role of the user
-        refresh["is_staff"] = user.is_staff
-        refresh["is_superuser"] = user.is_superuser
-
         return attrs
 
 class UserDetailsSerializer(DRADetailsSerializer):
-    roles = serializers.SerializerMethodField()
+    groups = serializers.SlugRelatedField(many=True, read_only=True, slug_field="name")
+
     class Meta:
         extra_fields = []
         model = User
-        fields = ["full_name", "roles"]
+        fields = ["full_name", "dni", "groups"]
+        # exclude = ["password"]
         read_only_fields = ("dni",)
         lookup_field = "dni"
-
-    def get_roles(self, obj):
-        roles = []
-        if obj.is_staff:
-            roles.append("staff")
-        if obj.is_superuser:
-            roles.append("superuser")
-        if Alumno.objects.filter(user=obj).exists():
-            roles.append("alumno")
-        return roles

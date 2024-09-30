@@ -17,7 +17,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import *
 from ..paginations import *
 #utils imports
-from ..utils.utils import generar_cuotas
+from ..utils import generar_cuotas
 
 class PagoViewSet(viewsets.ModelViewSet):
     queryset : BaseManager[Pago] = Pago.objects.all()
@@ -63,7 +63,6 @@ class PagoDeUnAlumnoViewSet(APIView):
     pagination_class = PagoResultsSetPagination
     serializer_class = PagoDeUnAlumnoSerializer      
 
-    @parser_classes([MultiPartParser, FormParser])
     def post(self, request, alumno_id, *args, **kwargs):
 
         pago_data = request.data  
@@ -86,6 +85,12 @@ class CompromisoDePagoViewSet(viewsets.ModelViewSet):
     filter_backends = [OrderingFilter]
     ordering_fields = ['anio']
     ordering = ['anio']
+
+        
+    @parser_classes([MultiPartParser, FormParser])
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
 
     @action(detail=True, methods=['get'], url_path='archivo')
     def retrieve_pdf(self, request, pk=None):
@@ -189,23 +194,33 @@ class UltimoCompromisoDePagoViewSet(APIView):
   
 
 
-class FirmasDeUnAlumnoView(viewsets.ViewSet):
-
+class FirmasDeUnAlumnoView(viewsets.ReadOnlyModelViewSet):
     pagination_class = FirmasResultSetPagination
 
     def list(self, request, alumno_id=None):
         firmas_comp_todas = FirmaCompPagoAlumno.objects.filter(alumno_id=alumno_id)
         ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
-        
+
+        # Aplicar paginación
+        page = self.paginate_queryset(firmas_comp_todas)
+        if page is not None:
+            serializer = FirmaCompPagoAlumnoSerializer(page, many=True)
+            data = serializer.data
+            for item in data:
+                item['firmo_ultimo_compromiso'] = FirmaCompPagoAlumno.objects.filter(
+                    alumno_id=alumno_id, 
+                    compromiso_de_pago=ultimo_compromiso
+                ).exists()
+            return self.get_paginated_response(data)
+
         serializer = FirmaCompPagoAlumnoSerializer(firmas_comp_todas, many=True)
         data = serializer.data
-        
         for item in data:
             item['firmo_ultimo_compromiso'] = FirmaCompPagoAlumno.objects.filter(
                 alumno_id=alumno_id, 
                 compromiso_de_pago=ultimo_compromiso
             ).exists()
-        
+
         return Response(data)
 
 class CuotaViewSet(viewsets.ModelViewSet):
@@ -223,10 +238,31 @@ class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
     queryset: BaseManager[Cuota] = Cuota.objects.all()
     serializer_class = CuotaDeUnAlumnoSerializer
-    pagination_class = PagoResultsSetPagination
+    pagination_class = CuotasResultSetPagination
     
 
     def list(self, request, alumno_id=None):
         queryset = self.get_queryset().filter(alumno_id=alumno_id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class CuotasImpagasDeUnAlumnoViewSet(viewsets.ModelViewSet):
+    lookup_field = 'alumno_id'
+    serializer_class = CuotaDeUnAlumnoSerializer
+    pagination_class = CuotasResultSetPagination
+
+    def get_queryset(self):
+        alumno_id = self.kwargs.get('alumno_id')
+        if not alumno_id:
+            return Cuota.objects.none()
+            
+        return Cuota.objects.filter(
+            alumno_id=alumno_id
+        ).exclude(
+            lineadepago__pago__estado="Confirmado" 
+        ).distinct()
+
+    def list(self, request, alumno_id=None):
+        queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

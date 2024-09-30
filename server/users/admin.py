@@ -13,4 +13,4 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ("groups",)
     search_fields = list_display
     ordering = ("full_name",)
-    filter_horizontal = ("groups", "user_permissions")
+    filter_horizontal = ("groups",)

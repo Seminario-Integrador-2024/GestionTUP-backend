@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db.models import CharField
-from django.db.models import EmailField
 from django.db.models import PositiveIntegerField
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -32,7 +31,6 @@ class User(AbstractUser):
     )
     first_name = None
     last_name = None
-    email = EmailField(_("email address"), default="")
     username = None  # type: ignore[assignment]
     USERNAME_FIELD = "dni"
     REQUIRED_FIELDS = ["email"]
@@ -46,10 +44,6 @@ class User(AbstractUser):
     # all users with matched email
 
     def __str__(self) -> str:
-        return self.full_name
-
-    @property
-    def get_full_name(self) -> str:
         return self.full_name
 
     def get_absolute_url(self) -> str:

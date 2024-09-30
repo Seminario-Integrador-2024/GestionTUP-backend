@@ -310,7 +310,7 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": env.int(
         "DJANGO_ACCESS_TOKEN_LIFE",
-        default=datetime.timedelta(minutes=1),
+        default=datetime.timedelta(minutes=30),
     ),
     "REFRESH_TOKEN_LIFETIME": env.int(
         "DJANGO_REFRESH_TOKEN_LIFE",

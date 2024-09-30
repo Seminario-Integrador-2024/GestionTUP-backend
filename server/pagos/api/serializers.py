@@ -5,17 +5,24 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.response import Response
 
-from ..utils.email_sender import enviar_email_de_pagos
+from ...emails_controller.email_sender_pagos import enviar_mail_del_pago_a_tosoreria
 
 # Create your serializers here.
 
 class CompromisoDePagoSerializer(serializers.ModelSerializer):
+    fecha_vencimiento_1 = serializers.IntegerField(required=False)
+    fecha_vencimiento_2 = serializers.IntegerField(required=False)
+    fecha_vencimiento_3 = serializers.IntegerField(required=False)
+
     archivo_pdf = serializers.FileField(write_only=True, required=False)
     archivo_pdf_url = serializers.SerializerMethodField()
+
 
     class Meta:
         model = CompromisoDePago
         exclude = ['comprimiso_path']
+
+
 
     def get_archivo_pdf_url(self, obj):
         request = self.context.get('request')
@@ -130,24 +137,39 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
     valorpagado = serializers.SerializerMethodField()
     valorinformado = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Cuota
+        fields = ['numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado']
+
     def get_valorinformado(self, instance):
         # Buscar el monto aplicado a esta cuota a través de LineaDePago
         linea_pagos = LineaDePago.objects.filter(cuota=instance)
         return sum(linea_pago.monto_aplicado for linea_pago in linea_pagos)
     
-    def get_valorpagado(self, instance):
-        # Sumar todos los montos aplicados a esta cuota a través de LineaDePago
+    def get_valorpagado(self, instance):    
+        # Obtener todos los LineaDePago asociados a esta cuota
         linea_pagos = LineaDePago.objects.filter(cuota=instance)
-        return sum(linea_pago.monto_aplicado for linea_pago in linea_pagos)
+        
+        # Obtener todos los pagos correspondientes a estas líneas de pago
+        pagos = Pago.objects.filter(id_pago__in=[linea_pago.pago.id_pago for linea_pago in linea_pagos])
+        
+        #Verificar estado de todos los pagos correspondientes a una cuota
+        confirmado = True
+        for pago in pagos:
+            if pago.estado != "Confirmado":
+                confirmado = False
+        
+        # Sumar el monto aplicado por cuota
+        total_pagado_por_cuota = sum(linea_pago.monto_aplicado for linea_pago in linea_pagos)
+        
+        if confirmado:
+            return total_pagado_por_cuota
+        else:
+            return 0
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         return representation
-
-    class Meta:
-        model = Cuota
-        fields = ['numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado']
-
 
 
 
@@ -163,7 +185,7 @@ class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Pago
-        fields = ['monto_informado', 'ticket', 'estado', 'fecha', 'cuotas','comentario','nro_transferencia']
+        fields = ['monto_informado', 'estado', 'fecha', 'cuotas','comentario']
 
     def get_cuotas(self, obj):
       
@@ -181,14 +203,12 @@ class PagoDeUnAlumnoRetrieveSerializer(serializers.ModelSerializer):
 class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
     cuotas = serializers.ListField(write_only=True)
     monto_informado = serializers.FloatField()
-    ticket = serializers.ImageField()
     comentario = serializers.CharField(required = False, allow_blank=True)
-    nro_transferencia = serializers.IntegerField()
 
 
     class Meta:
         model = Pago
-        fields = ['alumno', 'cuotas', 'monto_informado', 'ticket', 'comentario','nro_transferencia']
+        fields = ['alumno', 'cuotas', 'monto_informado', 'comentario']
 
     
     def get_cuotas(self, obj):
@@ -209,22 +229,19 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
         cuotas_ids_str = ','.join(map(str, cuotas_ids_str))
         cuotas_ids = [int(id_str) for id_str in cuotas_ids_str.split(',')]
 
-        monto_informado = validated_data.pop('monto_informado')
+        monto_informado = float(validated_data.pop('monto_informado'))
         alumno = validated_data.pop('alumno')
         comentario = validated_data.pop('comentario')
-        nro_transferencia = validated_data.pop('nro_transferencia')
         
 
         pago = Pago.objects.create(
             monto_informado=monto_informado,
             alumno=alumno,
-            ticket=validated_data.get('ticket'),
             estado="Informado",
             comentario = comentario if comentario != '' else 'No hay comentario',
-            nro_transferencia = nro_transferencia
         )     
 
-        cuotas = Cuota.objects.filter(nro_cuota__in=cuotas_ids)
+        cuotas = Cuota.objects.filter(alumno=alumno,nro_cuota__in=cuotas_ids)
         monto_restante = monto_informado
 
         for cuota in cuotas:
@@ -234,11 +251,13 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             # Obtener el total pagado previamente para esta cuota
             total_pagado_anteriormente = LineaDePago.objects.filter(cuota=cuota).aggregate(total=models.Sum('monto_aplicado'))['total'] or 0.0
 
+
+
             # Lógica para manejar los distintos casos de pago
             if cuota.estado in ['Impaga', 'Vencida']:
                 # Pago completo a una cuota impaga
                 if monto_restante >= (cuota.monto - total_pagado_anteriormente):
-                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado=cuota.monto - total_pagado_anteriormente)
+                    LineaDePago.objects.create(pago=pago, cuota=cuota, monto_aplicado = cuota.monto - total_pagado_anteriormente)
                     cuota.estado = 'Pagada completamente'
                     cuota.fecha_informado = timezone.now()
                     monto_restante -= (cuota.monto - total_pagado_anteriormente)
@@ -263,6 +282,6 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             cuota.save()
 
         #Mandar el email a tesoeria
-        enviar_email_de_pagos(pago)
+        enviar_mail_del_pago_a_tosoreria(pago)
 
         return pago

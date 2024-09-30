@@ -3,6 +3,8 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.routers import SimpleRouter
 from django.urls import path, include
 from server.alumnos.api.views import AlumnosViewSet
+from server.alumnos.api.views import AlumnosQuePagaronCuotaViewSet
+from server.alumnos.api.views import AlumnosQueNoPagaronCuotaViewSet
 from server.excel.api.views import ExcelViewSet
 from server.materias.api.views import MateriaViewSet
 from server.pagos.api.views import CompromisoDePagoViewSet
@@ -17,6 +19,7 @@ from server.pagos.api.views import CuotaDeUnAlumnoViewSet
 from server.pagos.api.views import PagoDeUnAlumnoViewSet 
 from server.pagos.api.views import PagoDeUnAlumnoRetrieveViewSet
 from server.pagos.api.views import AlumnosNoFirmaronUltimoCompromisoView
+from server.pagos.api.views import CuotasImpagasDeUnAlumnoViewSet
 
 # agregar las vistas de de cada app en forma de router.
 # el import debe seguir el siguiente formato:
@@ -53,9 +56,17 @@ url_pagos = [
     path("firmantes/alumnos-firmaron-ultimo-compromiso/", AlumnosFirmaronUltimoCompromisoView.as_view({'get': 'list'}), name="alumnos-firmaron-ultimo-compromiso"),
     path("firmantes/alumnos-no-firmaron-ultimo-compromiso/", AlumnosNoFirmaronUltimoCompromisoView.as_view({'get': 'list'}), name="alumnos-no-firmaron-ultimo-compromiso"),
     path("cuotas/alumno/<int:alumno_id>/", CuotaDeUnAlumnoViewSet.as_view({"get": "list"}), name="cuotas-de-alumno"),
+    path("cuotas/alumno/<int:alumno_id>/impagas/", CuotasImpagasDeUnAlumnoViewSet.as_view({"get": "list"}), name="cuotas-impagas-de-alumno"),
     path("pagos/alumno/<int:alumno_id>",PagoDeUnAlumnoViewSet.as_view(), name = "pago-de-un-alumno"),
     path("pagos/alumno/resumen_pagos/<int:alumno_id>",PagoDeUnAlumnoRetrieveViewSet.as_view({"get": "list"}), name = "pago-de-un-alumno-retrive"),
+        
 ]
 
+url_alumnos = [
+    path('alumnos/pagaron-cuota/<str:mes_anio>/', AlumnosQuePagaronCuotaViewSet.as_view({'get': 'list'}), name = "alumnos-pagaron-cuota"),
+    path('alumnos/no-pagaron-cuota/<str:mes_anio>/', AlumnosQueNoPagaronCuotaViewSet.as_view({'get': 'list'}), name = "alumnos-no-pagaron-cuota"),
+
+]
 
 urlpatterns = router.urls + url_pagos
+urlpatterns += url_alumnos

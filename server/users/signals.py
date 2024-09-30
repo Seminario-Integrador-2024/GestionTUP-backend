@@ -10,6 +10,7 @@ from .models import User
 def post_migrate_create_superuser(sender, **kwargs):
     if not User.objects.filter(is_superuser=True).exists():
         User.objects.create_superuser(
+            full_name="Admin",
             # username=None,
             dni=12345678,
             email="admin@admin.com",
