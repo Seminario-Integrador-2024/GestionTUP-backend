@@ -140,7 +140,7 @@ def nro_ultima_cuota(alumno_id):
     
     ultima_cuota = Cuota.objects.filter(alumno=alumno_id).order_by('nro_cuota').last()
     cant_cuotas_por_anio = Cuota.objects.filter(alumno=alumno_id, fecha_vencimiento__year=anio_actual).count()
-    print("##########################",cant_cuotas_por_anio)
+
 
     if cant_cuotas_por_anio >= 11:
         return 0 
