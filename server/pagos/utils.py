@@ -65,7 +65,7 @@ def cargar_matricula_anual(alumno_id,ultimo_compromiso):
 
 
         Cuota.objects.create(
-            nro_cuota = nro_cuota_ultima + 1 if nro_cuota_ultima > 0 else 0,
+            nro_cuota = 0,
             monto = ultimo_compromiso.matricula,
             compdepago = ultimo_compromiso,
             estado = "Impaga",
@@ -119,9 +119,9 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
 
 
     # Crear 5 cuotas mensuales 
-    for i in range(0, 5):
+    for i in range(1, 6):
         Cuota.objects.create(
-            nro_cuota=nro_cuota_ultima+i+1,
+            nro_cuota=nro_cuota_ultima+i,
             monto=monto,
             compdepago=ultimo_compromiso,
             estado=estado_cuota,
@@ -139,7 +139,10 @@ def generar_cuotas(alumno_id,ultimo_compromiso):
 def nro_ultima_cuota(alumno_id):
     ultima_cuota = Cuota.objects.filter(alumno=alumno_id).order_by('nro_cuota').last()
     if ultima_cuota:
-        return ultima_cuota.nro_cuota
+        if ultima_cuota.nro_cuota == 10:
+            return 0
+        else:
+            return ultima_cuota.nro_cuota
     else:
         return 0
 
