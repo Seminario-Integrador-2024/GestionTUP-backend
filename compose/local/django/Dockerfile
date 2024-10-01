@@ -51,6 +51,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   libpq-dev \
   # Translations dependencies
   gettext \
+  # Install cron
+  cron \
   # cleaning up unused files
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
@@ -71,9 +73,20 @@ COPY ./compose/local/django/start /start
 RUN sed -i 's/\r$//g' /start
 RUN chmod +x /start
 
-
-
 # copy application code to WORKDIR
 COPY . ${APP_HOME}
+
+# Configurar el crontab para ejecutar el script Python cada minuto
+RUN (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/python ${APP_HOME}/server/tareas_programadas/actualizar_cuotas.py >> ${APP_HOME}/server/tareas_programadas/actualizar_cuotas.log 2>&1") | crontab -
+RUN (crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/python ${APP_HOME}/server/tareas_programadas/actualizar_cuotas.py ") | crontab -
+
+# Asegúrate de que el script tenga permisos de ejecución
+RUN chmod +x ${APP_HOME}/server/tareas_programadas/actualizar_cuotas.py
+  
+
+# Run the command on container startup
+CMD ["bash", "-c", "service restart cron && tail -f ${APP_HOME}/server/tareas_programadas/actualizar_cuotas.log"]
+
+
 
 ENTRYPOINT ["/entrypoint"]

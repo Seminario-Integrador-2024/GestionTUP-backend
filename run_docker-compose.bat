@@ -24,5 +24,7 @@ docker-compose -f docker-compose.local.yml run --rm django python manage.py migr
 echo.
 echo [========================= Contenedores Corriendo =========================]
 echo.
+
+
 endlocal
 
