@@ -139,7 +139,7 @@ class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cuota
-        fields = ['numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado']
+        fields = ['id_cuota','numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado']
 
     def get_valorinformado(self, instance):
         # Buscar el monto aplicado a esta cuota a través de LineaDePago
