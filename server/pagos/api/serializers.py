@@ -241,7 +241,7 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             comentario = comentario if comentario != '' else 'No hay comentario',
         )     
 
-        cuotas = Cuota.objects.filter(alumno=alumno,nro_cuota__in=cuotas_ids)
+        cuotas = Cuota.objects.filter(alumno=alumno,id_cuota__in=cuotas_ids)
         monto_restante = monto_informado
 
         for cuota in cuotas:
