@@ -1,11 +1,33 @@
-import datetime
-from ..pagos.models import Cuota, CompromisoDePago, LineaDePago , FirmaCompPagoAlumno
-from ..alumnos.models import Alumno
-from ..materias.models import Materia, MateriaAlumno
+import environ
+import django
+import os
+
+
+# Cargar el archivo .env
+env = environ.Env()
+environ.Env.read_env(os.path.join(os.path.dirname(__file__), "../.postgres"))
+
+# Configuración de la base de datos
+DATABASES = {
+    'default': env.db(),  # Usa environ para configurar la base de datos
+}
+
+# Configuración de Django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
+django.setup()
+
+
+
+from django.db import models
+from server.pagos.models import Cuota, CompromisoDePago, LineaDePago , FirmaCompPagoAlumno
+from server.alumnos.models import Alumno
+from server.materias.models import Materia, MateriaAlumno
 import datetime
 
 
-print(f"{datetime.datetime.now()} - tareas programadas ejecutándose")
+
+
+print(f"{datetime.datetime.now()} - tareas programadas ejecutándoseeee")
 
 
 
