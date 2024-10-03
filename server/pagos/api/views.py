@@ -234,6 +234,8 @@ class CuotaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+
+
 class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
     queryset: BaseManager[Cuota] = Cuota.objects.all()
@@ -244,7 +246,15 @@ class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     def list(self, request, alumno_id=None):
         queryset = self.get_queryset().filter(alumno_id=alumno_id)
         serializer = self.get_serializer(queryset, many=True)
+
+        # Aplicar paginación
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = CuotaDeUnAlumnoSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         return Response(serializer.data)
+
 
 class CuotasImpagasDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
