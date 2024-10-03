@@ -25,12 +25,10 @@ from server.materias.models import Materia, MateriaAlumno
 import datetime
 
 
-
-
 print(f"{datetime.datetime.now()} - tareas programadas ejecutándoseeee")
 
 
-
+"""
 def tomar_cuotas_mes_actual():
     mes_actual = datetime.now().month()
     anio_actual = datetime.now().year()
@@ -76,7 +74,7 @@ def alumnos_cuota_impaga(cuotas_de_este_mes):
 
 
 
-
+"""
 
 
 def actualizar_cuotas(cuotas_de_este_mes):
@@ -87,19 +85,27 @@ def actualizar_cuotas(cuotas_de_este_mes):
     alumnos_firm_ult_compdepag = FirmaCompPagoAlumno.objects.filter(compromiso_de_pago = ultimo_compromiso,
                                                                         alumno__in = alumnos_activos)
     hoy = timezone.now().date()
+    anio_actual = hoy.year
     fechas_vencimiento_monto = {}
     alumnos_cuota_vencida = {}
+    cuotas = []
+    cant_max_materias = 2
 
-    actualizar = True
+    if not ultimo_compromiso.exists() or not alumnos_firm_ult_compdepag.exists() or not alumnos_activos.exists():
+        actualizar = False
+    else:
+        actualizar = True
 
-    if hoy.month() >= 3 and hoy.month() <= 7:
+
+    if hoy.month >= 3 and hoy.month <= 7:
         cuatrimestre_analizado = 1
-    elif hoy.month() > 7 and hoy.month() <= 12:
+    elif hoy.month > 7 and hoy.month <= 12:
         cuatrimestre_analizado = 2
     else:
         actualizar = False
 
     if actualizar:
+        
         for alumno in alumnos_activos:
 
             cant_materias_alumno = MateriaAlumno.objects.filter(alumno = alumno, anio = anio_actual).count()                
@@ -107,11 +113,11 @@ def actualizar_cuotas(cuotas_de_este_mes):
             cuotas_pendientes = Cuota.objects.filter(fecha_vencimiento__lte = hoy, alumno = alumno,
                                                 estado__in=["Impaga","Vencida","Pagada parcialmente"],
                                                 cuatrimestre = cuatrimestre_analizado
-                                                ).order_by("nro_cuota")[30]
+                                                ).order_by("nro_cuota")
 
             if cuotas_pendientes.exists():         
 
-                if cant_materias_alumno <= cant_min_materias:
+                if cant_materias_alumno > cant_max_materias:
 
                     if hoy >= ultimo_compromiso.fecha_vencimiento_2:
                         fechas_vencimiento_monto = {ultimo_compromiso.fecha_vencimiento_2 : ultimo_compromiso.monto_completo_2venc}
@@ -123,16 +129,25 @@ def actualizar_cuotas(cuotas_de_este_mes):
                     elif hoy >= ultimo_compromiso.fecha_vencimiento_3:
                         fechas_vencimiento_monto = {ultimo_compromiso.fecha_vencimiento_3 : ultimo_compromiso.monto_reducido_3venc}
                 
-                alumnos_cuota_vencida = {alumno:cuota}
 
+                cuotas_actualizadas = []
                 for cuota in cuotas_pendientes:
-                    #cuota.estado = "Vencida"
-                    cuota.fecha_vencimiento = list(fechas_vencimiento_monto.keys())[0]
-                    cuota.monto = list(fechas_vencimiento_monto.values())[0]
+                    cuota.estado = "Vencida"
+                    cuota.fecha_vencimiento = fecha_vencimiento
+                    cuota.monto = monto
                     cuota.save()
+                    cuotas_actualizadas.append(cuota.nro_cuota)  # Guardar el número de cuota
+
+                # Agregar cuotas al diccionario de alumnos
+                if alumno in alumnos_cuota_vencida:
+                    alumnos_cuota_vencida[alumno].extend(cuotas_actualizadas)
+                else:
+                    alumnos_cuota_vencida[alumno] = cuotas_actualizadas
+
 
             fechas_vencimiento_monto.clear()
 
         print("Cuotas actualizadas")
 
     return alumnos_cuota_vencida
+
