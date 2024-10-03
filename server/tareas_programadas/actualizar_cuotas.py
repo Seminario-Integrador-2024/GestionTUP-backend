@@ -46,12 +46,6 @@ def tomar_cuotas_mes_actual():
     return cuotas_de_este_mes
 
 
-def actualizar_cuotas(cuotas_de_este_mes):
-
-    pass
-
-
-
 def alumnos_cuota_pag_parc(cuotas_de_este_mes):
 
     alumnos_cuota_pag_parc_dict = {}
@@ -92,22 +86,32 @@ def actualizar_cuotas(cuotas_de_este_mes):
     
     alumnos_firm_ult_compdepag = FirmaCompPagoAlumno.objects.filter(compromiso_de_pago = ultimo_compromiso,
                                                                         alumno__in = alumnos_activos)
+    hoy = timezone.now().date()
+    fechas_vencimiento_monto = {}
+    alumnos_cuota_vencida = {}
 
-    for alumno in alumnos_activos:
-        materias_alumno = MateriaAlumno.objects.filter(alumno=alumno,anio=anio_actual).count()
-        hora_actual = timezone.now().time()
+    actualizar = True
 
+    if hoy.month() >= 3 and hoy.month() <= 7:
+        cuatrimestre_analizado = 1
+    elif hoy.month() > 7 and hoy.month() <= 12:
+        cuatrimestre_analizado = 2
+    else:
+        actualizar = False
 
-        if hora_actual.hour >= 12:
-                
-            hoy = timezone.now().date()
-            cuotas_pendientes = Cuota.objects.filter(fecha_vencimiento__lte=hoy)
+    if actualizar:
+        for alumno in alumnos_activos:
 
-            if cuotas_pendientes.exists():
-                
-                fechas_vencimiento_monto = {}
+            cant_materias_alumno = MateriaAlumno.objects.filter(alumno = alumno, anio = anio_actual).count()                
+            
+            cuotas_pendientes = Cuota.objects.filter(fecha_vencimiento__lte = hoy, alumno = alumno,
+                                                estado__in=["Impaga","Vencida","Pagada parcialmente"],
+                                                cuatrimestre = cuatrimestre_analizado
+                                                ).order_by("nro_cuota")[30]
 
-                if materias_alumno <= cant_min_materias:
+            if cuotas_pendientes.exists():         
+
+                if cant_materias_alumno <= cant_min_materias:
 
                     if hoy >= ultimo_compromiso.fecha_vencimiento_2:
                         fechas_vencimiento_monto = {ultimo_compromiso.fecha_vencimiento_2 : ultimo_compromiso.monto_completo_2venc}
@@ -118,11 +122,17 @@ def actualizar_cuotas(cuotas_de_este_mes):
                         fechas_vencimiento_monto = { ultimo_compromiso.fecha_vencimiento_2 : ultimo_compromiso.monto_reducido__2venc}
                     elif hoy >= ultimo_compromiso.fecha_vencimiento_3:
                         fechas_vencimiento_monto = {ultimo_compromiso.fecha_vencimiento_3 : ultimo_compromiso.monto_reducido_3venc}
-        
-        for cuota in cuotas_pendientes:
-            cuota.estado = "Vencida"
-            cuota.fecha_vencimiento = list(fechas_vencimiento_monto.keys())[0]
-            cuota.monto = list(fechas_vencimiento_monto.values())[0]
-            cuota.save()
+                
+                alumnos_cuota_vencida = {alumno:cuota}
 
-    return "cuotas actualizadas"
+                for cuota in cuotas_pendientes:
+                    #cuota.estado = "Vencida"
+                    cuota.fecha_vencimiento = list(fechas_vencimiento_monto.keys())[0]
+                    cuota.monto = list(fechas_vencimiento_monto.values())[0]
+                    cuota.save()
+
+            fechas_vencimiento_monto.clear()
+
+        print("Cuotas actualizadas")
+
+    return alumnos_cuota_vencida
