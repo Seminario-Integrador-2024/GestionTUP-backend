@@ -292,13 +292,29 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
             not_processed.setdefault(idx, row)
             continue
         if user_dni:
+            pago = Pago()
             alumno = Alumno.objects.get(alumno__user=user_dni)
             alumno__pk = alumno.user.dni
             estado = "Pendiente"
-            pagos_alumno = Pago.objects.filter(alumno=alumno__pk, estado=estado)
+            pagos_alumno = Pago.objects.filter(
+                alumno=alumno__pk,
+                estado=estado,
+            ).order_by("fecha")
             if pagos_alumno.exists():
-                pago = pagos_alumno.first()
+                pago = pagos_alumno.order_by(
+                    "fecha_pago",
+                ).first()  # obtain the last pago of the alumno
             cuota_alumno = Cuota.objects.filter(alumno=alumno__pk)
+            if cuota_alumno.exists():
+                cuota = cuota_alumno.first()
+            else:
+                # alumno has no cuota, cuota 0 is matricula
+                cuota = Cuota(
+                    nr_cuota=0,  # 0 is matricula
+                    alumno=alumno__pk,
+                    estado=estado,
+                    monto=row["Monto"],
+                )
             pago_alumno = LineaDePago(
                 cuota=cuota,
                 pago=pago,
@@ -308,15 +324,7 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
             not_processed.setdefault(idx, row)
             continue
         with transaction.atomic():
-            if not Pago.objects.filter(
-                nro_recibo=pago.nro_recibo,
-            ).exists():
-                pago.save()
-            if not PagoAlumno.objects.filter(
-                id_pago=pago_alumno.id_pago,
-                id_alumno=pago_alumno.id_alumno,
-            ).exists():
-                pago_alumno.save()
+            pago_alumno.save()
 
 
 if __name__ == "__main__":
