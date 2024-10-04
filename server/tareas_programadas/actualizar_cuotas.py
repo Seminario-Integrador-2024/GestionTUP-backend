@@ -28,7 +28,6 @@ from server.alumnos.models import Alumno
 from server.materias.models import Materia, MateriaAlumno
 from server.emails_controller.email_config import configurar_mail, enviar_email, Credenciales
 
-print(f"{datetime.datetime.now()} - Tareas programadas ejecutándose")
 
 
 def actualizacion_de_cuotas():
