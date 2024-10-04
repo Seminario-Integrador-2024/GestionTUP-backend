@@ -81,28 +81,28 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
     anio_actual = timezone.now().year
     materias_alumno = MateriaAlumno.objects.filter(id_alumno_id=alumno_id,anio=anio_actual).count()
     cant_min_materias = 2
-    estado_cuota = ""
+    #estado_cuota = ""
 
     if materias_alumno <= cant_min_materias:
         if timezone.now().day <= ultimo_compromiso.fecha_vencimiento_1:
             monto = ultimo_compromiso.cuota_reducida
-            estado_cuota = "Impaga"
+            #estado_cuota = "Impaga"
         elif timezone.now().day > ultimo_compromiso.fecha_vencimiento_1 and timezone.now().day <= ultimo_compromiso.fecha_vencimiento_2:
             monto = ultimo_compromiso.cuota_reducida_2venc
-            estado_cuota = "Vencida"
+            #estado_cuota = "Vencida"
         else:
             monto = ultimo_compromiso.cuota_reducida_3venc
-            estado_cuota = "Vencida"
+            #estado_cuota = "Vencida"
     else:
         if timezone.now().day <= ultimo_compromiso.fecha_vencimiento_1:
             monto = ultimo_compromiso.monto_completo
-            estado_cuota = "Impaga"
+            #estado_cuota = "Impaga"
         elif timezone.now().day > ultimo_compromiso.fecha_vencimiento_1 and timezone.now().day <= ultimo_compromiso.fecha_vencimiento_2:
             monto = ultimo_compromiso.monto_completo_2venc
-            estado_cuota = "Vencida"
+            #estado_cuota = "Vencida"
         else:
             monto = ultimo_compromiso.monto_completo_3venc
-            estado_cuota = "Vencida"
+            #estado_cuota = "Vencida"
 
 
 
@@ -124,7 +124,8 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
             nro_cuota=nro_cuota_ultima+i+1,
             monto=monto,
             compdepago=ultimo_compromiso,
-            estado=estado_cuota,
+            #estado=estado_cuota,
+            estado="Impaga",
             fecha_vencimiento=fecha_primer_vencimiento(ultimo_compromiso,i),
             fecha_pago_devengado=timezone.now(),
             tipo="Cuota",

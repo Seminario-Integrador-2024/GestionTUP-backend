@@ -1,7 +1,9 @@
+# python imports 
+import datetime
 import environ
 import django
+from django.utils import timezone
 import os
-
 
 # Cargar el archivo .env
 env = environ.Env()
@@ -16,68 +18,16 @@ DATABASES = {
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 django.setup()
 
-
-
-from django.db import models
+# my imports
 from server.pagos.models import Cuota, CompromisoDePago, LineaDePago , FirmaCompPagoAlumno
 from server.alumnos.models import Alumno
 from server.materias.models import Materia, MateriaAlumno
-import datetime
+from server.emails_controller.email_config import configurar_mail, enviar_email, Credenciales
+
+print(f"{datetime.datetime.now()} - tareas programadas ejecutándose")
 
 
-print(f"{datetime.datetime.now()} - tareas programadas ejecutándoseeee")
-
-
-"""
-def tomar_cuotas_mes_actual():
-    mes_actual = datetime.now().month()
-    anio_actual = datetime.now().year()
-    fecha_inicio = datetime.date(anio_actual, mes_actual, 1)
-    ultimo_dia_mes = (fecha_inicio.replace(month=mes % 12 + 1, day=1) - datetime.timedelta(days=1)).day
-    fecha_fin = datetime.date(anio_actual, mes_actual, ultimo_dia_mes)
-
-    cuotas_de_este_mes = Cuota.objects.filter(alumno__estado_academico="Activo",
-                                            fecha_vencimiento__range=(fecha_inicio,fecha_fin),
-                                            estado__in=["Impaga","Vencida","Pagada parcialmente"]
-                                            ).order_by("nro_cuota")[30]
-
-    return cuotas_de_este_mes
-
-
-def alumnos_cuota_pag_parc(cuotas_de_este_mes):
-
-    alumnos_cuota_pag_parc_dict = {}
-    for cuota in cuotas_de_este_mes:
-        if cuota.estado == "Pagada parcialmente":
-            alumnos_cuota_pag_parc_dict[cuota.alumno.user__dni] = cuota.nro_cuota
-
-    return alumnos_cuota_pag_parc_dict
-
-def  alumnos_cuota_vencida(cuotas_de_este_mes):
-
-    alumnos_cuota_vencida_dict = {}
-    for cuota in cuotas_de_este_mes:
-        if cuota.estado == "Vencida":
-            alumnos_cuota_vencida_dict[cuota.alumno.user__dni] = cuota.nro_cuota
-
-    return alumnos_cuota_vencida_dict
-
-
-def alumnos_cuota_impaga(cuotas_de_este_mes):
-
-    alumnos_cuota_impaga_dict = {}
-    for cuota in cuotas_de_este_mes:       
-        if cuota.estado == "Impaga":
-            alumnos_cuota_impaga_dict[cuota.alumno.user__dni] = cuota.nro_cuota
-
-    return alumnos_cuota_impaga_dict
-
-
-
-"""
-
-
-def actualizar_cuotas(cuotas_de_este_mes):
+def actualizacion_de_cuotas():
     alumnos_activos = Alumno.objects.filter(estado_academico="Activo")
 
     ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
@@ -91,7 +41,7 @@ def actualizar_cuotas(cuotas_de_este_mes):
     cuotas = []
     cant_max_materias = 2
 
-    if not ultimo_compromiso.exists() or not alumnos_firm_ult_compdepag.exists() or not alumnos_activos.exists():
+    if not ultimo_compromiso or not alumnos_firm_ult_compdepag or not alumnos_activos:
         actualizar = False
     else:
         actualizar = True
@@ -115,7 +65,7 @@ def actualizar_cuotas(cuotas_de_este_mes):
                                                 cuatrimestre = cuatrimestre_analizado
                                                 ).order_by("nro_cuota")
 
-            if cuotas_pendientes.exists():         
+            if cuotas_pendientes:         
 
                 if cant_materias_alumno > cant_max_materias:
 
@@ -132,11 +82,16 @@ def actualizar_cuotas(cuotas_de_este_mes):
 
                 cuotas_actualizadas = []
                 for cuota in cuotas_pendientes:
-                    cuota.estado = "Vencida"
-                    cuota.fecha_vencimiento = fecha_vencimiento
-                    cuota.monto = monto
+                    if cuota.estado in  ["Impaga","Vencida"]:
+                        cuota.estado = "Vencida"
+                        cuota.fecha_vencimiento = list(fechas_vencimiento_monto.keys())[0]
+                        cuota.monto = list(fechas_vencimiento_monto.values())[0]
                     cuota.save()
-                    cuotas_actualizadas.append(cuota.nro_cuota)  # Guardar el número de cuota
+
+                    if cuota.fecha_vencimiento.month < hoy.month:
+                        alumno.estado_financiero = "Inhabilitado" 
+
+                    cuotas_actualizadas.append(cuota)  # Guardar el número de cuota
 
                 # Agregar cuotas al diccionario de alumnos
                 if alumno in alumnos_cuota_vencida:
@@ -148,6 +103,43 @@ def actualizar_cuotas(cuotas_de_este_mes):
             fechas_vencimiento_monto.clear()
 
         print("Cuotas actualizadas")
+        return alumnos_cuota_vencida
+    
+    else:
+        print("No hay cuotas que infromar")
+        return {}
 
-    return alumnos_cuota_vencida
 
+
+def enviar_aviso_de_vencimiento(alumnos_cuota_vencida):
+
+    if alumnos_cuota_vencida != None:
+    
+        for alumno, cuotas in alumnos_cuota_vencida.items(): 
+        
+            body = f"Hola {alumno.user.full_name} "
+            
+            if alumno.estado_financiero == "Inhabilitado":  
+                subject = "Actualización de cuotas y estado financiero"
+                cuotas_vencidas = ", ".join([str(cuota.nro_cuota) for cuota in cuotas])
+                body = body + f"tienes cuotas vencidas y estás, temporalmente, inhabilitado hasta que abones la/s cuota/s {cuotas_vencidas}.  \n Saludos. \n Atte. Tesoreria"
+            else:
+                cuotas_actualizadas = ", ".join([str(cuota.nro_cuota) for cuota in cuotas])
+                subject = "Actualización de cuotas"
+                body = body + f"se ha actualizado el monto y la fecha de vencimiento de las siguientes cuotas: {cuotas_actualizadas}. \n No te olvide de abonar. \n Saludos. \n Atte. Tesoreria"
+            
+            # Asigna el email del alumno para el envío
+            #email_recipient = alumno.user.email
+            
+            email_recipient = "tesoreriautnpruebas2024@gmail.com"
+
+            mensaje = configurar_mail(body, subject, email_recipient)
+            try:
+                enviar_email(mensaje)
+                print(f"Correo enviado a: {email_recipient}")
+            except Exception as e:
+                print(f"Error al enviar correo a {email_recipient}: {e}")
+        
+        print("Correos enviados")
+    else:
+        print("No hay correos que enviar")
