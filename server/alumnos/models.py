@@ -122,7 +122,7 @@ class Inhabilitacion(models.Model):
     fecha_desde = models.DateTimeField()
     fecha_hasta = models.DateTimeField()
     descripcion = models.TextField()
-
+    # fecha desde y id alumno clave primaria compuesta
     def __str__(self) -> str:
         return super().__str__()
 

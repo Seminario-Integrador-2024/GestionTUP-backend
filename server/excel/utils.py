@@ -32,6 +32,16 @@ B. cargar archivo sysacad xls en la bbdd
 4.4 idem 4.1 y 4.2 para Materia_Alumno(DNI,Materia,Año).
 5 reporte de registros duplicados de Materia_Alumno
 6 reporte de registros agregados de Materia_Alumno
+
+
+procesar sysadmin xls
+    # TODO: matchear alumnos con sysadmin
+    # TODO: procesar montos a cada pago
+    # TODO: procesar pagos neg/o netos nulos o positivos
+    # TODO: cambiar estado alumnos positivos est_fin y tabla inhabilitacion
+    --
+    # TODO: extra - devolver total de registros nuevos procesados (unicidad montos y nro recibo)
+    # TODO: extra - devolver total de registros no procesados (id nro fila)
 """
 
 import json
@@ -41,13 +51,16 @@ from typing import TYPE_CHECKING
 import pandas as pd
 from django.db import transaction
 
+from server.alumnos.models import Alumno
+from server.users.models import User
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 # functions definitions
 
 
-def validate_excel(data: pd.DataFrame) -> dict:
+def validate_sysacad(data: pd.DataFrame) -> dict:
     """
     Validates the data in a DataFrame against a set lambda functions.
 
@@ -167,10 +180,8 @@ def load_data(data: pd.DataFrame):
     # models definitions
     from django.contrib.auth.hashers import make_password
 
-    from server.alumnos.models import Alumno
     from server.materias.models import Materia
     from server.materias.models import MateriaAlumno
-    from server.users.models import User
 
     # sanitize the data
 
@@ -234,6 +245,75 @@ def load_data(data: pd.DataFrame):
                 anio=materia_alumno.anio,
             ).exists():
                 materia_alumno.save()
+
+
+# procesar sysadmin xls
+
+
+def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
+    """
+    Process the sysadmin data.
+
+    Args:
+    - data (pd.DataFrame): The data to process.
+    """
+    # models definitions
+    from server.pagos.models import Cuota
+    from server.pagos.models import LineaDePago
+    from server.pagos.models import Pago
+
+    # sanitize the data
+    skipped_rows: int = 0
+    not_processed = {}
+    # iterate over the rows, create the instances and save them
+    for idx, row in data.iterrows():
+        # skip the rows to the last processed row
+        if skipped_rows < last_row:
+            skipped_rows += 1
+            continue
+        # each row is a payment
+        # get the alumno before creating the pago
+        user_dni: int | None = None
+        dni = int(row["Nro Doc"])
+        full_name = str(row["Nombre Originante del Ingreso"])
+        if Alumno.objects.filter(user__dni=dni).exists():
+            user_dni = dni
+        elif full_name:
+            # TODO: make parcial match with the full_name
+            from difflib import SequenceMatcher
+
+            all_users = Alumno.objects.values("full_name", "dni")
+            for user in all_users:
+                matcher = SequenceMatcher(None, full_name, user["full_name"])
+                if matcher.ratio() >= 0.9:  # matches 90% of the full_name
+                    user_dni = user.get("dni")
+                    break
+        else:
+            not_processed.setdefault(idx, row)
+            continue
+        if user_dni:
+            alumno = Alumno.objects.get(alumno__user=user_dni)
+            estado = "Pendiente"
+            pagos_alumno = Pago.objects.filter(alumno=alumno, estado=estado)
+            cuota = Cuota()
+            pago_alumno = LineaDePago(
+                cuota=cuota,
+                pago=pago,
+                monto_aplicado=row["Monto"],
+            )
+        else:
+            not_processed.setdefault(idx, row)
+            continue
+        with transaction.atomic():
+            if not Pago.objects.filter(
+                nro_recibo=pago.nro_recibo,
+            ).exists():
+                pago.save()
+            if not PagoAlumno.objects.filter(
+                id_pago=pago_alumno.id_pago,
+                id_alumno=pago_alumno.id_alumno,
+            ).exists():
+                pago_alumno.save()
 
 
 if __name__ == "__main__":

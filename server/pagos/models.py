@@ -1,12 +1,12 @@
+import os
 
 from django.db import models
-from django.utils import timezone
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-import os
-from django.core.files import File
+from django.utils import timezone
 
-from ..alumnos.models import Alumno
+from server.alumnos.models import Alumno
+
 
 class Pago(models.Model):
     """
@@ -31,7 +31,7 @@ class Pago(models.Model):
     estado = models.CharField(blank=True, null=True)
     fecha = models.DateField()
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
-    
+
     def save(self, *args, **kwargs):
         self.fecha = timezone.now()
         super().save(*args, **kwargs)
@@ -84,8 +84,8 @@ class CompromisoDePago(models.Model):
     fecha_vencimiento_2 = models.IntegerField(default=15)
     fecha_vencimiento_3 = models.IntegerField(default=28)
     comprimiso_path = models.CharField(max_length=255, blank=True, null=True)
-    archivo_pdf = models.FileField(upload_to='compromisos/', blank=True,  null=True)
-    fecha_ultima_modif = models.DateTimeField(max_length=10,  blank=True,  null=True)
+    archivo_pdf = models.FileField(upload_to="compromisos/", blank=True, null=True)
+    fecha_ultima_modif = models.DateTimeField(max_length=10, blank=True, null=True)
     fecha_carga_comp_pdf = models.DateTimeField(max_length=10, auto_now_add=True, blank=True,  null=True)
 
     def save(self, *args, **kwargs):
@@ -105,7 +105,7 @@ class CompromisoDePago(models.Model):
 
         if self.archivo_pdf:
             self.comprimiso_path = self.archivo_pdf.url
-            super().save(update_fields=['comprimiso_path'])
+            super().save(update_fields=["comprimiso_path"])
 
 
 @receiver(post_delete, sender=CompromisoDePago)
@@ -147,7 +147,6 @@ class Cuota(models.Model):
     fecha_informado = models.DateField(null=True, blank=True)
     tipo = models.CharField(max_length=255)
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
-    
 
 
 class FirmaCompPagoAlumno(models.Model):
