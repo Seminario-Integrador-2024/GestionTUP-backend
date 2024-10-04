@@ -293,9 +293,12 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
             continue
         if user_dni:
             alumno = Alumno.objects.get(alumno__user=user_dni)
+            alumno__pk = alumno.user.dni
             estado = "Pendiente"
-            pagos_alumno = Pago.objects.filter(alumno=alumno, estado=estado)
-            cuota = Cuota()
+            pagos_alumno = Pago.objects.filter(alumno=alumno__pk, estado=estado)
+            if pagos_alumno.exists():
+                pago = pagos_alumno.first()
+            cuota_alumno = Cuota.objects.filter(alumno=alumno__pk)
             pago_alumno = LineaDePago(
                 cuota=cuota,
                 pago=pago,
