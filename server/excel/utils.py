@@ -295,6 +295,9 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
             pago = Pago()
             alumno = Alumno.objects.get(alumno__user=user_dni)
             alumno__pk = alumno.user.dni
+            # no informado
+            # informado
+            # confimado
             estado = "Pendiente"
             pagos_alumno = Pago.objects.filter(
                 alumno=alumno__pk,
