@@ -125,39 +125,3 @@ class Inhabilitacion(models.Model):
 
     def __str__(self) -> str:
         return super().__str__()
-
-
-class TipoInhabilitacion(models.Model):
-    """
-    TipoInhabilitacion represents a type of disqualification.
-
-    Args:
-        models (django.db.models.Model): The base model class for \
-            all Django models.
-    """
-
-    id_tipo_inhabilitacion = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=255)
-    descripcion = models.TextField()
-
-    def __str__(self) -> str:
-        return super().__str__()
-
-
-class TipoEstado(models.Model):
-    """
-    Represents a type of state.
-
-    Attributes:
-        id_tipo_estado (AutoField): The primary key for \
-            the TipoEstado instance.
-        nombre (CharField): The name of the TipoEstado.
-        descripcion (TextField): The description of the TipoEstado.
-    """
-
-    id_tipo_estado = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=255)
-    descripcion = models.TextField()
-
-    def __str__(self) -> str:
-        return super().__str__()
