@@ -257,11 +257,11 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
     Args:
     - data (pd.DataFrame): The data to process.
     """
-    # models definitions
+    
     from server.pagos.models import Cuota
-    from server.pagos.models import LineaDePago
     from server.pagos.models import Pago
-
+    from calendar import monthrange
+    from django.db.models import Q
     # sanitize the data
     skipped_rows: int = 0
     not_processed = {}
@@ -291,43 +291,26 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
         else:
             not_processed.setdefault(idx, row)
             continue
-        if user_dni:
-            pago = Pago()
+        if user_dni and not row["ID Recibo Anulado"]:
             alumno = Alumno.objects.get(alumno__user=user_dni)
             alumno__pk = alumno.user.dni
             # no informado
             # informado
             # confimado
-            estado = "Pendiente"
+            estado = "Informado"
+            # get all informed pagos by the alumno and sort by date
             pagos_alumno = Pago.objects.filter(
                 alumno=alumno__pk,
                 estado=estado,
             ).order_by("fecha")
-            if pagos_alumno.exists():
-                pago = pagos_alumno.order_by(
-                    "fecha_pago",
-                ).first()  # obtain the last pago of the alumno
-            cuota_alumno = Cuota.objects.filter(alumno=alumno__pk)
-            if cuota_alumno.exists():
-                cuota = cuota_alumno.first()
-            else:
-                # alumno has no cuota, cuota 0 is matricula
-                cuota = Cuota(
-                    nr_cuota=0,  # 0 is matricula
-                    alumno=alumno__pk,
-                    estado=estado,
-                    monto=row["Monto"],
-                )
-            pago_alumno = LineaDePago(
-                cuota=cuota,
-                pago=pago,
-                monto_aplicado=row["Monto"],
+            cuotas_alumno = Cuota.objects.filter(alumno=alumno__pk,Q(estado="Pagado Parcialmente")| Q("")).order_by(
+                "nro_cuota",
             )
         else:
             not_processed.setdefault(idx, row)
             continue
         with transaction.atomic():
-            pago_alumno.save()
+            pass
 
 
 if __name__ == "__main__":
@@ -342,44 +325,3 @@ if __name__ == "__main__":
         initialdir=Path().home() / "Downloads",
         filetypes=(("Excel files", "*.xls *.xlsx"), ("all files", "*.*")),
     )
-
-    # read the file
-    COL_HEADER = 6  # header row with column names in the excel file
-    df: pd.DataFrame = pd.read_excel(
-        io=path,
-        names=[
-            "Extensión",
-            "Esp.",
-            "Ingr.",
-            "Año",
-            "Legajo",
-            "Documento",
-            "Apellido y Nombres",
-            "Comisión",
-            "Materia",
-            "Nombre de materia",
-            "Estado",
-            "Recursa",
-            "Cant.",
-            "Mail",
-            "Celular",
-            "Teléfono",
-            "Tel. Resid",
-            "Nota 1",
-            "Nota 2",
-            "Nota 3",
-            "Nota 4",
-            "Nota 5",
-            "Nota 6",
-            "Nota 7",
-            "Nota Final",
-            "Nombre",
-        ],
-        skiprows=COL_HEADER - 1,
-        engine="openpyxl",
-    )
-    # make index start at 6
-    df.index = df.index + COL_HEADER + 1
-    # result: dict = validate_excel(df)
-    # do something with result
-    print(df.iloc[0:20, 10:17].head(20))
