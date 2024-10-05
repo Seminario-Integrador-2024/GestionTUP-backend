@@ -83,7 +83,8 @@ def actualizacion_de_cuotas():
 
                 if cuota.fecha_vencimiento < hoy:
                     alumno.estado_financiero = "Inhabilitado" 
-
+                    #Agregar a la tabla Inabilitaciones
+                
               
                 if alumno in alumnos_cuota_vencida:
                     alumnos_cuota_vencida[alumno].append(cuota)
@@ -248,3 +249,7 @@ def enviar_aviso_de_vencimiento(alumnos_cuota_vencida):
         print("Correos enviados")
     else:
         print("No hay correos que enviar")"""
+    
+def actualizar_estado_academico():
+    
+    pass 
