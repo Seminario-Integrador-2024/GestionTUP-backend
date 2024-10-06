@@ -51,7 +51,8 @@ class AlumnosViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Alumno.DoesNotExist:
             return Response(
-                {"error": "Alumno not found"}, status=status.HTTP_404_NOT_FOUND
+                {"error": "Alumno not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
 
@@ -60,7 +61,7 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
     pagination_class = AlumnoResultsSetPagination
     filter_backends = [OrderingFilter]  # Agregar el backend de ordenación
     ordering_fields = [
-        "full_name"
+        "full_name",
     ]  # Especificar los campos por los que se puede ordenar
     ordering = ["full_name"]  # Ordenar por defecto por 'full_name'
 
@@ -130,7 +131,7 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
     pagination_class = AlumnoResultsSetPagination
     filter_backends = [OrderingFilter]  # Agregar el backend de ordenación
     ordering_fields = [
-        "full_name"
+        "full_name",
     ]  # Especificar los campos por los que se puede ordenar
     ordering = ["full_name"]  # Ordenar por defecto por 'full_name'
 
@@ -175,10 +176,10 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
         alumnos_con_pago_confirmado = alumnos_activos.filter(
             Q(cuota__id_cuota__in=cuota_ids)
             & Q(
-                cuota__estado__in=["Pagada completamente", "Pagada parcialmente"]
+                cuota__estado__in=["Pagada completamente", "Pagada parcialmente"],
             )  # Estado de la cuota
             & Q(
-                cuota__lineadepago__pago__estado="Confirmado"
+                cuota__lineadepago__pago__estado="Confirmado",
             ),  # Pago confirmado para la cuota en cuestión
         ).distinct()
 
