@@ -115,10 +115,6 @@ class Inhabilitacion(models.Model):
     """
 
     id_alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
-    id_tipo_inhabilitacion = models.ForeignKey(
-        "TipoInhabilitacion",
-        on_delete=models.CASCADE,
-    )
     fecha_desde = models.DateTimeField()
     fecha_hasta = models.DateTimeField()
     descripcion = models.TextField()
