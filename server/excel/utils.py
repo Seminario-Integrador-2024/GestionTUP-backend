@@ -44,15 +44,20 @@ procesar sysadmin xls
     # TODO: extra - devolver total de registros no procesados (id nro fila)
 """
 
+import datetime
 import json
 import re
 from typing import TYPE_CHECKING
 
 import pandas as pd
+from django.contrib.auth.hashers import make_password
 from django.db import transaction
 from django.db.models import Q
 
 from server.alumnos.models import Alumno
+from server.alumnos.models import Inhabilitacion
+from server.materias.models import Materia
+from server.materias.models import MateriaAlumno
 from server.pagos.models import Cuota
 from server.pagos.models import LineaDePago
 from server.pagos.models import Pago
@@ -182,10 +187,6 @@ def load_data(data: pd.DataFrame):
     - data (pd.DataFrame): The data to load into the database.
     """
     # models definitions
-    from django.contrib.auth.hashers import make_password
-
-    from server.materias.models import Materia
-    from server.materias.models import MateriaAlumno
 
     # sanitize the data
 
@@ -254,14 +255,26 @@ def load_data(data: pd.DataFrame):
 # procesar sysadmin xls
 
 
-def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
+def process_sysadmin(
+    data: pd.DataFrame,
+    last_row=0,
+    *args,
+    **kwargs,
+) -> tuple[int, int, int, dict]:
     """
-    Process the sysadmin data.
+    process_sysadmin processes the sysadmin data and updates
+    the payments and the students status.
 
     Args:
-    - data (pd.DataFrame): The data to process.
-    """
+        data (pd.DataFrame): the data to process as a pandas DataFrame.
+        last_row (int, optional): last row processed. Defaults to 0.
 
+    Returns:
+        tuple[int, int, dict]: a tuple containing the total processed rows,
+        the total not processed rows and a dict with the not processed rows.
+    """
+    total_procesado = 0
+    total_no_procesado = 0
     # sanitize the data
     skipped_rows: int = 0
     not_processed = {}
@@ -271,6 +284,7 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
         if skipped_rows < last_row:
             skipped_rows += 1
             continue
+
         # each row is a payment
         # get the alumno before creating the pago
         user_dni: int | None = None
@@ -294,6 +308,7 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
         if (
             user_dni and not row["ID Recibo Anulado"]
         ):  # process only non-voided receipts
+            total_procesado += 1
             alumno = Alumno.objects.get(alumno__user=user_dni)
             alumno__pk = alumno.user.dni
 
@@ -360,6 +375,7 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
                                 cuota=cuota,
                                 monto_aplicado=nuevo_monto,
                             )
+
         elif row["ID Recibo Anulado"]:  # voided receipt
             # get the pago and set the estado to anulado
             pago = Pago.objects.get(id=row["ID Recibo Anulado"])
@@ -367,6 +383,28 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
             pago.save()
         else:
             not_processed.setdefault(idx, row)
+    # fin bucle sysadmin
+
+    # process all blocked students
+    with transaction.atomic():
+        als = Alumno.objects.filter(estado_financiero="Inhabilitado")
+        for al in als:
+            cuotas_vencidas = Cuota.objects.filter(
+                alumno=al,
+                estado="Vencido",
+            ).exists()
+            if not cuotas_vencidas:
+                al.estado_financiero = "Habilitado"
+                inh = Inhabilitacion.objects.get(
+                    id_alumno=al,
+                    fecha_hasta=None,
+                )
+                inh.fecha_hasta = datetime.datetime.now()
+                inh.save()
+                al.save()
+    total_no_procesado = len(not_processed)
+    rows_processed = total_procesado + total_no_procesado
+    return (total_procesado, total_no_procesado, rows_processed, not_processed)
 
 
 if __name__ == "__main__":

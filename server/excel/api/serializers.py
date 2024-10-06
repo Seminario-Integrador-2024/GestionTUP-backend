@@ -233,49 +233,27 @@ class SysAdminCreateSerializer(ModelSerializer[Excel]):
 
         excel_as_df.index = excel_as_df.index + col_header + 1
         # Validate Excel file format and return invalid rows
-        invalid_rows_dict = process_sysadmin(excel_as_df)
-
-        if invalid_rows_dict:
-            raise InvalidFileContents(detail=invalid_rows_dict)
-
-        # Check for duplicates
-        columns_filter = ["Documento", "Materia", "Año"]
-        duplicates = excel_as_df[
-            excel_as_df.duplicated(subset=columns_filter, keep="last")
-        ]
-
-        if not duplicates.empty:
-            excel_as_df = excel_as_df.drop_duplicates(
-                subset=columns_filter,
-                keep="last",
+        (total_procesado, total_no_procesado, last_row, no_procesados) = (
+            process_sysadmin(
+                excel_as_df,
             )
-            self.context["duplicates"] = duplicates.shape[0]
-
-        # Load data to the database
-        load_data(excel_as_df)
-
-        if duplicates.empty:
-            self.context["message"] = (
-                "Data and Excel successfully loaded without duplicates"
-            )
-        else:
-            tot_dup = duplicates.shape[0]
-            self.context["amount"] = tot_dup
-            self.context["message"] = (
-                "Data and Excel loaded successfully. Duplicate rows were\
-                    identified and not added to the database."
-            )
-        self.context["total"] = excel_as_df.shape[0]
+        )
+        self.context["total_procesado"] = total_procesado
+        self.context["total_no_procesado"] = total_no_procesado
+        self.context["ultima_fila_procesada"] = last_row
+        self.context["no_procesados"] = no_procesados
         return value
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        if "amount" in self.context:
-            ret["duplicates"] = self.context["amount"]
-        if "message" in self.context:
-            ret["message"] = self.context["message"]
-            ret["total"] = self.context["total"]
-        return ret
+        if "total_procesado" in self.context:
+            ret["total_procesado"] = self.context["total_procesado"]
+        if "total_no_procesado" in self.context:
+            ret["total_no_procesado"] = self.context["total_no_procesado"]
+        if "ultima_fila_procesada" in self.context:
+            ret["ultima_fila_procesada"] = self.context["ultima_fila_procesada"]
+        if "no_procesados" in self.context:
+            ret["no_procesados"] = self.context["no_procesados"]
 
     class Meta:
         model = Excel
