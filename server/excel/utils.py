@@ -50,8 +50,12 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 from django.db import transaction
+from django.db.models import Q
 
 from server.alumnos.models import Alumno
+from server.pagos.models import Cuota
+from server.pagos.models import LineaDePago
+from server.pagos.models import Pago
 from server.users.models import User
 
 if TYPE_CHECKING:
@@ -257,11 +261,7 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
     Args:
     - data (pd.DataFrame): The data to process.
     """
-    
-    from server.pagos.models import Cuota
-    from server.pagos.models import Pago
-    from calendar import monthrange
-    from django.db.models import Q
+
     # sanitize the data
     skipped_rows: int = 0
     not_processed = {}
@@ -291,26 +291,82 @@ def process_sysadmin(data: pd.DataFrame, last_row=0, *args, **kwargs):
         else:
             not_processed.setdefault(idx, row)
             continue
-        if user_dni and not row["ID Recibo Anulado"]:
+        if (
+            user_dni and not row["ID Recibo Anulado"]
+        ):  # process only non-voided receipts
             alumno = Alumno.objects.get(alumno__user=user_dni)
             alumno__pk = alumno.user.dni
-            # no informado
-            # informado
-            # confimado
-            estado = "Informado"
+
+            estado_pago = "Informado"  # informado/no informado/ confirmado
+            estado_cuota = "Pagado Completamente"
             # get all informed pagos by the alumno and sort by date
-            pagos_alumno = Pago.objects.filter(
-                alumno=alumno__pk,
-                estado=estado,
-            ).order_by("fecha")
-            cuotas_alumno = Cuota.objects.filter(alumno=alumno__pk,Q(estado="Pagado Parcialmente")| Q("")).order_by(
-                "nro_cuota",
+            pago_alumno = (
+                Pago.objects.filter(
+                    alumno=alumno__pk,
+                    estado=estado_pago,
+                )
+                .order_by("fecha")
+                .first()
             )
+            cuotas_alumno = Cuota.objects.filter(
+                Q(alumno=alumno__pk) & ~Q(estado=estado_cuota),
+            ).order_by("fecha_vencimiento")
+
+            # if there's a pago and a pending cuota
+            remanente = 0  # asumimos que no hay remanente aun
+            pago_alumno.monto_confirmado = float(row["Monto"])
+            if pago_alumno and cuotas_alumno:
+                for cuota in cuotas_alumno:
+                    linea_pagos = LineaDePago.objects.filter(
+                        # obtener todas las lineas de pago hechas por el alumno
+                        pago=pago_alumno,
+                        cuota=cuota,
+                    )
+
+                    if linea_pagos.exists():
+                        monto_confirmado = sum(
+                            # obtener el monto confirmado, hasta el momento
+                            [linea.monto_aplicado for linea in linea_pagos],
+                        )
+                    else:
+                        monto_confirmado = 0
+
+                    if (
+                        monto_confirmado < cuota.monto
+                    ):  # if true, cuota is not fully paid
+                        with transaction.atomic():
+                            # asumimos estado pagado completamente
+                            cuota.estado = estado_cuota
+                            nuevo_monto = (
+                                float(row["Monto"]) if remanente == 0 else remanente
+                            )
+                            pago_alumno.estado = "Confirmado"
+                            if (
+                                monto_confirmado + nuevo_monto
+                            ) < cuota.monto:  # pago parcial de cuota
+                                cuota.estado = "Pagado Parcialmente"
+                            elif (
+                                monto_confirmado + nuevo_monto
+                            ) > cuota.monto:  # pago completo/excedente
+                                nuevo_monto = cuota.monto - monto_confirmado
+                                remanente = float(row["Monto"]) - nuevo_monto
+                            pago_alumno.monto_confirmado = (
+                                nuevo_monto + monto_confirmado
+                            )
+                            pago_alumno.save()
+                            cuota.save()
+                            LineaDePago.objects.create(
+                                pago=pago_alumno,
+                                cuota=cuota,
+                                monto_aplicado=nuevo_monto,
+                            )
+        elif row["ID Recibo Anulado"]:  # voided receipt
+            # get the pago and set the estado to anulado
+            pago = Pago.objects.get(id=row["ID Recibo Anulado"])
+            pago.estado = "Anulado"
+            pago.save()
         else:
             not_processed.setdefault(idx, row)
-            continue
-        with transaction.atomic():
-            pass
 
 
 if __name__ == "__main__":

@@ -115,6 +115,15 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
     if instance.archivo_pdf and os.path.isfile(instance.archivo_pdf.path):
         os.remove(instance.archivo_pdf.path)
 
+
+choices_cuota = (
+    ("Impaga", "Impaga"),
+    ("Pagada Parcialmente", "Pagada Parcialmente"),
+    ("Pagada Completamente", "Pagada Completamente"),
+    ("Vencida", "Vencida"),
+)
+
+
 class Cuota(models.Model):
     """
     Represents a Cuota.
