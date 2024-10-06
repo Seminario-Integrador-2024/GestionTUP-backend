@@ -260,7 +260,7 @@ def process_sysadmin(
     last_row=0,
     *args,
     **kwargs,
-) -> tuple[int, int, int, dict]:
+) -> tuple[int, int, list, dict]:
     """
     process_sysadmin processes the sysadmin data and updates
     the payments and the students status.
@@ -360,6 +360,7 @@ def process_sysadmin(
                                 monto_confirmado + nuevo_monto
                             ) < cuota.monto:  # pago parcial de cuota
                                 cuota.estado = "Pagado Parcialmente"
+                                remanente = 0
                             elif (
                                 monto_confirmado + nuevo_monto
                             ) > cuota.monto:  # pago completo/excedente
@@ -387,6 +388,7 @@ def process_sysadmin(
 
     # process all blocked students
     with transaction.atomic():
+        alumnos_rehabilitados = list()
         als = Alumno.objects.filter(estado_financiero="Inhabilitado")
         for al in als:
             cuotas_vencidas = Cuota.objects.filter(
@@ -394,6 +396,7 @@ def process_sysadmin(
                 estado="Vencido",
             ).exists()
             if not cuotas_vencidas:
+                AlumnosRehabilitados.objects.create(al)
                 al.estado_financiero = "Habilitado"
                 inh = Inhabilitacion.objects.get(
                     id_alumno=al,
@@ -402,9 +405,15 @@ def process_sysadmin(
                 inh.fecha_hasta = datetime.datetime.now()
                 inh.save()
                 al.save()
+                alumnos_rehabilitados.append(al)
     total_no_procesado = len(not_processed)
-    rows_processed = total_procesado + total_no_procesado
-    return (total_procesado, total_no_procesado, rows_processed, not_processed)
+    return (
+        last_row,
+        total_procesado,
+        total_no_procesado,
+        alumnos_rehabilitados,
+        not_processed,
+    )
 
 
 if __name__ == "__main__":

@@ -233,25 +233,25 @@ class SysAdminCreateSerializer(ModelSerializer[Excel]):
 
         excel_as_df.index = excel_as_df.index + col_header + 1
         # Validate Excel file format and return invalid rows
-        (total_procesado, total_no_procesado, last_row, no_procesados) = (
+        (total_procesado, total_no_procesado, al_rehab, no_procesados) = (
             process_sysadmin(
                 excel_as_df,
             )
         )
+        self.context["alumnos_rehabilitados"] = al_rehab
         self.context["total_procesado"] = total_procesado
         self.context["total_no_procesado"] = total_no_procesado
-        self.context["ultima_fila_procesada"] = last_row
         self.context["no_procesados"] = no_procesados
         return value
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
+        if "alumnos_rehabilitados" in self.context:
+            ret["alumnos_rehabilitados"] = self.context["alumnos_rehabilitados"]
         if "total_procesado" in self.context:
             ret["total_procesado"] = self.context["total_procesado"]
         if "total_no_procesado" in self.context:
             ret["total_no_procesado"] = self.context["total_no_procesado"]
-        if "ultima_fila_procesada" in self.context:
-            ret["ultima_fila_procesada"] = self.context["ultima_fila_procesada"]
         if "no_procesados" in self.context:
             ret["no_procesados"] = self.context["no_procesados"]
 
