@@ -36,7 +36,7 @@ print(f"{datetime.datetime.now()} - Tareas programadas ejecutándose")
 
 # Mis imports
 from server.pagos.models import Cuota, CompromisoDePago, LineaDePago, FirmaCompPagoAlumno
-from server.alumnos.models import Alumno
+from server.alumnos.models import Alumno, Inhabilitacion
 from server.materias.models import Materia, MateriaAlumno
 from server.emails_controller.email_config import configurar_mail, enviar_email, Credenciales
 
@@ -76,7 +76,7 @@ def actualizacion_de_cuotas():
                 fecha_vencimiento__lte=hoy,
                 alumno=alumno,
                 estado__in=["Impaga", "Vencida", "Pagada parcialmente"],
-            ).order_by("nro_cuota")
+            )
 
 
             
@@ -105,6 +105,17 @@ def actualizacion_de_cuotas():
                     ###############################
                     # Agregar a la tabla Inabilitaciones
                     ###############################
+                    descripcion = f"El alumno {alumno.user.full_name} ha sido inhabilitado por falta de pagos"
+                    
+                    tiene_inhabilitacion = Inhabilitacion.objects.filter(id_alumno = alumno, fecha_hasta__isnull = True).exists()
+
+                    if not tiene_inhabilitacion:
+
+                        Inhabilitacion.objects.create(
+                            id_alumno=alumno,
+                            fecha_desde=timezone.make_aware(datetime.datetime.combine(hoy, datetime.time.min)),
+                            descripcion=descripcion
+                        )
 
                 else:    
                         
@@ -159,7 +170,10 @@ def enviar_aviso_de_vencimiento(alumnos_cuota_vencida):
 
 
 alumnos_cuota_vencida = actualizacion_de_cuotas()
+
+
 #enviar_aviso_de_vencimiento(alumnos_cuota_vencida)
+
 print("Cuotas actualizadas")
 
 print("Contenido de alumnos_cuota_vencida:")

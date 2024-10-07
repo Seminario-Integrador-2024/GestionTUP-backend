@@ -116,7 +116,7 @@ class Inhabilitacion(models.Model):
 
     id_alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
     fecha_desde = models.DateTimeField()
-    fecha_hasta = models.DateTimeField()
+    fecha_hasta = models.DateTimeField(blank = True, null=True)
     descripcion = models.TextField()
 
     def __str__(self) -> str:
