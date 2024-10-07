@@ -4,7 +4,8 @@ from ..models import *
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.response import Response
-
+from ...materias.models import Materia, MateriaAlumno
+from ...alumnos.models import Alumno
 from ...emails_controller.email_sender_pagos import enviar_mail_del_pago_a_tosoreria
 
 # Create your serializers here.
@@ -63,10 +64,16 @@ class CuotaSerializer(serializers.ModelSerializer):
 
 class FirmaCompPagoAlumnoSerializer(serializers.ModelSerializer):
     compromiso_de_pago = serializers.SerializerMethodField()
+    id_compromiso_de_pago = serializers.SerializerMethodField()
+
 
     class Meta:
         model = FirmaCompPagoAlumno
         fields = "__all__"
+
+    def get_id_compromiso_de_pago(self, obj):
+        compromiso = obj.compromiso_de_pago
+        return compromiso.id_comp_pago
 
     def get_compromiso_de_pago(self, obj):
         compromiso = obj.compromiso_de_pago
@@ -78,19 +85,77 @@ class FirmaCompPagoAlumnoSerializer(serializers.ModelSerializer):
             return f"{cuatrimestre}/{anio:02}" 
         return None
 
+class FirmaCompPagoAlumnoCompletoSerializer(serializers.ModelSerializer):
+    compromiso_de_pago = serializers.SerializerMethodField()
+
+    dni = serializers.IntegerField(source="alumno.user.dni", read_only=True)
+    email = serializers.EmailField(source="alumno.user.email", read_only=True)
+    full_name = serializers.CharField(source="alumno.user.full_name", read_only=True)
+    legajo = serializers.CharField(source="alumno.legajo", read_only=True)
+
+    class Meta:
+        model = FirmaCompPagoAlumno
+        fields = [
+            "id",
+            "dni", 
+            "email", 
+            "full_name", 
+            "legajo",
+            "firmado",
+            "compromiso_de_pago",
+            "fecha_firmado",
+        ]
+
+    def get_compromiso_de_pago(self, obj):
+        compromiso = obj.compromiso_de_pago
+        
+        if compromiso:
+            anio = compromiso.anio.year % 100 
+            cuatrimestre = str(compromiso.cuatrimestre).zfill(2)  
+            
+            return f"{cuatrimestre}/{anio:02}" 
+        return None
+    
+class AlumnoSerializer(serializers.ModelSerializer):
+    dni = serializers.IntegerField(source="user.dni", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+    full_name = serializers.CharField(source="user.full_name", read_only=True)
+    class Meta:
+        model = Alumno
+        fields = [
+            "dni", 
+            "email", 
+            "full_name", 
+            "legajo", 
+            "estado", 
+            "anio_ingreso", 
+            "telefono", 
+            "tel_res", 
+            "celular", 
+            "gender"
+        ]
 
 class CuotaDeUnAlumnoSerializer(serializers.ModelSerializer):
     numero = serializers.IntegerField(source='nro_cuota')
     montoActual = serializers.FloatField(source='monto')
     fechaVencimiento = serializers.DateField(source='fecha_vencimiento')
     tipocuota = serializers.CharField(source='tipo')
-
     valorpagado = serializers.SerializerMethodField()
     valorinformado = serializers.SerializerMethodField()
+    cuota_completa = serializers.SerializerMethodField()
 
     class Meta:
         model = Cuota
-        fields = ['numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado']
+        fields = ['id_cuota','numero', 'montoActual', 'fechaVencimiento', 'valorpagado', 'estado', 'tipocuota', 'valorinformado','cuota_completa']
+
+    def get_cuota_completa(self,instance):
+        alumno = Alumno.objects.get(user=instance.alumno)
+        anio_actual = timezone.now().year
+        cant_materias_alumno = MateriaAlumno.objects.filter(id_alumno_id=instance.alumno,anio=anio_actual).count()
+        if cant_materias_alumno > 2:
+            return True
+        else: 
+            return False
 
     def get_valorinformado(self, instance):
         # Buscar el monto aplicado a esta cuota a través de LineaDePago
@@ -192,7 +257,7 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             comentario = comentario if comentario != '' else 'No hay comentarios',
         )     
 
-        cuotas = Cuota.objects.filter(alumno=alumno,nro_cuota__in=cuotas_ids)
+        cuotas = Cuota.objects.filter(alumno=alumno,id_cuota__in=cuotas_ids)
         monto_restante = monto_informado
 
         for cuota in cuotas:

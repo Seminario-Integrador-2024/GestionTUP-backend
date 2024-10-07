@@ -113,12 +113,52 @@ class CompromisoDePagoViewSet(viewsets.ModelViewSet):
 
 #Esta vista no es usada
 class FirmaCompPagoAlumnoViewSets(viewsets.ModelViewSet):
-    queryset = FirmaCompPagoAlumno.objects.all()
-    serializer_class = FirmaCompPagoAlumnoSerializer
     pagination_class = FirmasResultSetPagination
 
 
-            
+class AlumnosFirmaronUltimoCompromisoView(viewsets.ViewSet):
+    pagination_class = FirmasResultSetPagination
+
+    def list(self, request):
+        ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
+
+        # Si no hay compromiso, devuelve una lista vacía
+        if not ultimo_compromiso:
+            return Response([], status=status.HTTP_200_OK)
+
+        firmas_ultimo_compromiso = FirmaCompPagoAlumno.objects.filter(compromiso_de_pago=ultimo_compromiso)
+
+        serializer = FirmaCompPagoAlumnoCompletoSerializer(firmas_ultimo_compromiso, many=True)
+        data = serializer.data
+
+        return Response(data)
+
+class AlumnosNoFirmaronUltimoCompromisoView(viewsets.ViewSet):
+    pagination_class = FirmasResultSetPagination
+
+    def list(self, request):
+        ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
+
+        # Si no hay compromiso, devuelve una lista vacía
+        if not ultimo_compromiso:
+            return Response([], status=status.HTTP_200_OK)
+        
+        alumnos_firmaron_ids = FirmaCompPagoAlumno.objects.filter(
+            compromiso_de_pago=ultimo_compromiso
+        ).values_list('alumno_id', flat=True)
+
+        alumnos_no_firmaron = Alumno.objects.exclude(user__dni__in=alumnos_firmaron_ids)
+
+        # Si no hay alumnos que no han firmado, también puedes devolver una lista vacía
+        if not alumnos_no_firmaron.exists():
+            return Response([], status=status.HTTP_200_OK)
+
+        serializer = AlumnoSerializer(alumnos_no_firmaron, many=True)
+        data = serializer.data
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
 class FirmarCompromisoView(APIView):
 
     def post(self, request, alumno_id=None):
@@ -194,6 +234,8 @@ class CuotaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+
+
 class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
     queryset: BaseManager[Cuota] = Cuota.objects.all()
@@ -204,7 +246,15 @@ class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     def list(self, request, alumno_id=None):
         queryset = self.get_queryset().filter(alumno_id=alumno_id)
         serializer = self.get_serializer(queryset, many=True)
+
+        # Aplicar paginación
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = CuotaDeUnAlumnoSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         return Response(serializer.data)
+
 
 class CuotasImpagasDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
