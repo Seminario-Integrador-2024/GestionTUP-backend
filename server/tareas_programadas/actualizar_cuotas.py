@@ -52,16 +52,17 @@ def actualizacion_de_cuotas():
                                 ultimo_compromiso.fecha_vencimiento_3]
     
     hoy = timezone.now().date()
-
+    
     if not ultimo_compromiso:
         print("No hay compromisos de pago.")
         return {}
 
-    
+    alumnos_cuota_vencida = {}
+
     if hoy.day in fechas_vencimiento_1_2_3:
         
         anio_actual = hoy.year
-        alumnos_cuota_vencida = {}
+       
         cant_max_materias = 2
 
         if hoy.month < 3 or hoy.month > 12:
@@ -85,37 +86,43 @@ def actualizacion_de_cuotas():
                 fechas_vencimiento_monto = {}
 
                 if cant_materias_alumno > cant_max_materias:
-                    if hoy.day >= ultimo_compromiso.fecha_vencimiento_2:
+                    if hoy.day >= ultimo_compromiso.fecha_vencimiento_2 and hoy.day < ultimo_compromiso.fecha_vencimiento_3:
                         fechas_vencimiento_monto[ultimo_compromiso.fecha_vencimiento_2] = ultimo_compromiso.monto_completo_2venc
                     elif hoy.day >= ultimo_compromiso.fecha_vencimiento_3:
                         fechas_vencimiento_monto[ultimo_compromiso.fecha_vencimiento_3] = ultimo_compromiso.monto_completo_3venc
                 else:
-                    if hoy.day >= ultimo_compromiso.fecha_vencimiento_2:
+                    if hoy.day >= ultimo_compromiso.fecha_vencimiento_2 and hoy.day < ultimo_compromiso.fecha_vencimiento_3:
                         fechas_vencimiento_monto[ultimo_compromiso.fecha_vencimiento_2] = ultimo_compromiso.monto_reducido__2venc
                     elif hoy.day >= ultimo_compromiso.fecha_vencimiento_3:
                         fechas_vencimiento_monto[ultimo_compromiso.fecha_vencimiento_3] = ultimo_compromiso.monto_reducido_3venc
             
             for cuota in cuotas_pendientes:
-                if cuota.estado in ["Impaga", "Vencida"]:
-                    cuota.estado = "Vencida"
-                    cuota.fecha_vencimiento = datetime.date(hoy.year, hoy.month, list(fechas_vencimiento_monto.keys())[0])
-                    if cuota.tipo != "Matrícula":
-                        cuota.monto = list(fechas_vencimiento_monto.values())[0]
-                    cuota.save()
-
 
                 if cuota.fecha_vencimiento.month < hoy.month:
                     alumno.estado_financiero = "Inhabilitado" 
+                    alumno.save()
+
                     ###############################
                     # Agregar a la tabla Inabilitaciones
                     ###############################
+
+                else:    
+                        
+
+                    if cuota.estado in ["Impaga", "Vencida"]:
+                        cuota.estado = "Vencida"
+                        cuota.fecha_vencimiento = datetime.date(hoy.year, hoy.month, list(fechas_vencimiento_monto.keys())[0])
+                        if cuota.tipo != "Matrícula":
+                            cuota.monto = list(fechas_vencimiento_monto.values())[0]
+                        cuota.save()
+
                 
                 if alumno in alumnos_cuota_vencida:
                     alumnos_cuota_vencida[alumno].append(cuota)
                 else:
                     alumnos_cuota_vencida[alumno] = [cuota]
-
-    return alumnos_cuota_vencida
+        print(hoy)
+    return alumnos_cuota_vencida or {}
 
 
 def enviar_aviso_de_vencimiento(alumnos_cuota_vencida):
