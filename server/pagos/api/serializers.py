@@ -254,7 +254,7 @@ class PagoDeUnAlumnoSerializer(serializers.ModelSerializer):
             monto_informado=monto_informado,
             alumno=alumno,
             estado="Informado",
-            comentario = comentario if comentario != '' else 'No hay comentario',
+            comentario = comentario if comentario != '' else 'No hay comentarios',
         )     
 
         cuotas = Cuota.objects.filter(alumno=alumno,id_cuota__in=cuotas_ids)
