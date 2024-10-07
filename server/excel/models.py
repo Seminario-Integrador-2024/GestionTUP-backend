@@ -21,7 +21,7 @@ class Excel(models.Model):
         ],
         help_text="Only Excel files (.xlsx, .xls) are allowed",
     )
-    last_reviewed = models.PositiveBigIntegerField(default=40)
+    last_reviewed = models.PositiveBigIntegerField(default=0)
     excel_type = models.CharField(
         max_length=50,
         null=False,

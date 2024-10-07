@@ -56,6 +56,7 @@ from django.db.models import Q
 
 from server.alumnos.models import Alumno
 from server.alumnos.models import Inhabilitacion
+from server.alumnos.models import Rehabilitados
 from server.materias.models import Materia
 from server.materias.models import MateriaAlumno
 from server.pagos.models import Cuota
@@ -260,7 +261,7 @@ def process_sysadmin(
     last_row=0,
     *args,
     **kwargs,
-) -> tuple[int, int, list, dict]:
+) -> list:
     """
     process_sysadmin processes the sysadmin data and updates
     the payments and the students status.
@@ -270,11 +271,15 @@ def process_sysadmin(
         last_row (int, optional): last row processed. Defaults to 0.
 
     Returns:
-        tuple[int, int, dict]: a tuple containing the total processed rows,
-        the total not processed rows and a dict with the not processed rows.
+        tuple[int, int, int, dict, dict]: a tuple containing results of the process
+        as follows:
+        0. last_row: the last row processed,
+        1. total_procesado: the total number of processed rows,
+        2. total_no_procesado: the total number of unprocessed rows,
+        3. alumnos_rehabilitados: a dict containing the rehabilitated students,
+        4. not_processed: a dict containing the unprocessed rows.
     """
     total_procesado = 0
-    total_no_procesado = 0
     # sanitize the data
     skipped_rows: int = 0
     not_processed = {}
@@ -332,50 +337,50 @@ def process_sysadmin(
             pago_alumno.monto_confirmado = float(row["Monto"])
             if pago_alumno and cuotas_alumno:
                 for cuota in cuotas_alumno:
-                    linea_pagos = LineaDePago.objects.filter(
-                        # obtener todas las lineas de pago hechas por el alumno
-                        pago=pago_alumno,
-                        cuota=cuota,
-                    )
-
-                    if linea_pagos.exists():
-                        monto_confirmado = sum(
-                            # obtener el monto confirmado, hasta el momento
-                            [linea.monto_aplicado for linea in linea_pagos],
+                    with transaction.atomic():
+                        linea_pagos = LineaDePago.objects.filter(
+                            # obtener todas las lineas de pago hechas por el alumno
+                            pago=pago_alumno,
+                            cuota=cuota,
                         )
-                    else:
-                        monto_confirmado = 0
-
-                    if (
-                        monto_confirmado < cuota.monto
-                    ):  # if true, cuota is not fully paid
-                        with transaction.atomic():
-                            # asumimos estado pagado completamente
-                            cuota.estado = estado_cuota
-                            nuevo_monto = (
-                                float(row["Monto"]) if remanente == 0 else remanente
+                        if linea_pagos.exists():
+                            linea_a_confirmar = linea_pagos.get(
+                                monto_aplicado=pago_alumno.monto_informado,
                             )
-                            pago_alumno.estado = "Confirmado"
-                            if (
-                                monto_confirmado + nuevo_monto
-                            ) < cuota.monto:  # pago parcial de cuota
-                                cuota.estado = "Pagado Parcialmente"
-                                remanente = 0
-                            elif (
-                                monto_confirmado + nuevo_monto
-                            ) > cuota.monto:  # pago completo/excedente
-                                nuevo_monto = cuota.monto - monto_confirmado
-                                remanente = float(row["Monto"]) - nuevo_monto
-                            pago_alumno.monto_confirmado = (
-                                nuevo_monto + monto_confirmado
+                            monto_confirmado = (
+                                sum(
+                                    # obtener el monto confirmado, hasta el momento
+                                    [linea.monto_aplicado for linea in linea_pagos],
+                                )
+                                - pago_alumno.monto_informado
                             )
-                            pago_alumno.save()
-                            cuota.save()
-                            LineaDePago.objects.create(
+                        else:
+                            linea_a_confirmar = LineaDePago(
                                 pago=pago_alumno,
                                 cuota=cuota,
-                                monto_aplicado=nuevo_monto,
                             )
+                            monto_confirmado = 0
+                        # asumimos estado pagado completamente
+                        cuota.estado = estado_cuota
+                        nuevo_monto = (
+                            float(row["Monto"]) if remanente == 0 else remanente
+                        )
+                        pago_alumno.estado = "Confirmado"
+                        if (
+                            monto_confirmado + nuevo_monto
+                        ) < cuota.monto:  # pago parcial de cuota
+                            cuota.estado = "Pagado Parcialmente"
+                            remanente = 0
+                        elif (
+                            monto_confirmado + nuevo_monto
+                        ) > cuota.monto:  # pago completo/excedente
+                            nuevo_monto = cuota.monto - monto_confirmado
+                            remanente = float(row["Monto"]) - nuevo_monto
+                        pago_alumno.monto_confirmado = nuevo_monto + monto_confirmado
+                        pago_alumno.save()
+                        cuota.save()
+                        linea_a_confirmar.monto_aplicado = nuevo_monto
+                        linea_a_confirmar.save()
 
         elif row["ID Recibo Anulado"]:  # voided receipt
             # get the pago and set the estado to anulado
@@ -388,7 +393,7 @@ def process_sysadmin(
 
     # process all blocked students
     with transaction.atomic():
-        alumnos_rehabilitados = list()
+        alumnos_rehabilitados = {}
         als = Alumno.objects.filter(estado_financiero="Inhabilitado")
         for al in als:
             cuotas_vencidas = Cuota.objects.filter(
@@ -396,21 +401,27 @@ def process_sysadmin(
                 estado="Vencido",
             ).exists()
             if not cuotas_vencidas:
-                AlumnosRehabilitados.objects.create(al)
-                al.estado_financiero = "Habilitado"
+                rehab = {
+                    "full_name": al.user.full_name,
+                    "legajo": al.legajo,
+                }
                 inh = Inhabilitacion.objects.get(
                     id_alumno=al,
                     fecha_hasta=None,
                 )
+                Rehabilitados.objects.create(
+                    user=al.user,
+                    legajo=al.legajo,
+                    fecha_deshabilitacion=inh.fecha_desde,
+                )
                 inh.fecha_hasta = datetime.datetime.now()
                 inh.save()
+                al.estado_financiero = "Habilitado"
                 al.save()
-                alumnos_rehabilitados.append(al)
-    total_no_procesado = len(not_processed)
-    return (
+                alumnos_rehabilitados.setdefault(al.user.dni, rehab)
+    return list(
         last_row,
         total_procesado,
-        total_no_procesado,
         alumnos_rehabilitados,
         not_processed,
     )
@@ -428,3 +439,5 @@ if __name__ == "__main__":
         initialdir=Path().home() / "Downloads",
         filetypes=(("Excel files", "*.xls *.xlsx"), ("all files", "*.*")),
     )
+
+    print(process_sysadmin(pd.read_excel(path)))

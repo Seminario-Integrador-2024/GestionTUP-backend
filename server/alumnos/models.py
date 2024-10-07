@@ -121,3 +121,34 @@ class Inhabilitacion(models.Model):
     # fecha desde y id alumno clave primaria compuesta
     def __str__(self) -> str:
         return super().__str__()
+
+
+class Rehabilitados(models.Model):
+    """
+    Represents a student who has been rehabilitated after up to date payment installment.
+
+    Args:
+        Alumno (type): The Alumno model.
+
+    Attributes:
+        user (OneToOneField): The user associated with the student.
+        fecha_deshabilitacion (DateTimeField): The date and time of the student was inhabilitated.
+    """
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        to_field="dni",
+        default=0,
+        primary_key=True,
+    )
+    estado = models.CharField(choices=choices_fin, default="Rehabilitado")
+    legajo = models.ForeignKey(Alumno, to_field="legajo", on_delete=models.DO_NOTHING)
+    fecha_rehabilitacion = models.DateTimeField(
+        auto_now_add=True,
+        input_formats=["%Y-%m-%d %H:%M"],
+    )
+    fecha_deshabilitacion = models.DateTimeField(null=True, blank=False)
+
+    def __str__(self) -> str:
+        return super().__str__()

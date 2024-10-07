@@ -1,3 +1,5 @@
+from typing import Any
+
 import pandas as pd
 from rest_framework.exceptions import APIException
 from rest_framework.exceptions import ParseError
@@ -145,6 +147,16 @@ class SysAdminCreateSerializer(ModelSerializer[Excel]):
     Args:
         ModelSerializer (_type_): _description_
     """
+    def validate(self, attrs: Any) -> Any:
+        result = super().validate(attrs)
+        result["ult_fila"] = self.context["ult_fila"]
+
+    def create(self, validated_data: Any) -> Excel:
+        last_row = validated_data.pop("ult_fila")
+        instance = super().create(validated_data)
+        instance.last_reviewed = last_row
+        instance.save()
+        return instance
 
     def validate_excel(self, value):
         allowed_extensions = ["xlsx", "xls"]
@@ -233,15 +245,14 @@ class SysAdminCreateSerializer(ModelSerializer[Excel]):
 
         excel_as_df.index = excel_as_df.index + col_header + 1
         # Validate Excel file format and return invalid rows
-        (total_procesado, total_no_procesado, al_rehab, no_procesados) = (
-            process_sysadmin(
-                excel_as_df,
-            )
+        result = process_sysadmin(
+            excel_as_df,
         )
-        self.context["alumnos_rehabilitados"] = al_rehab
-        self.context["total_procesado"] = total_procesado
-        self.context["total_no_procesado"] = total_no_procesado
-        self.context["no_procesados"] = no_procesados
+        self.context["ult_fila"] = result[0]  # for later re use
+        self.context["total_procesado"] = result[1]
+        self.context["alumnos_rehabilitados"] = result[2]
+        self.context["no_procesados"] = result[3]
+        self.context["total_no_procesado"] = result[0] - result[1]
         return value
 
     def to_representation(self, instance):
@@ -252,7 +263,6 @@ class SysAdminCreateSerializer(ModelSerializer[Excel]):
             ret["total_procesado"] = self.context["total_procesado"]
         if "total_no_procesado" in self.context:
             ret["total_no_procesado"] = self.context["total_no_procesado"]
-        if "no_procesados" in self.context:
             ret["no_procesados"] = self.context["no_procesados"]
 
     class Meta:
