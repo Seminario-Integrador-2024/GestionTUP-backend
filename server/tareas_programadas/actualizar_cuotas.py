@@ -45,19 +45,25 @@ def actualizacion_de_cuotas():
     alumnos_cuota_vencida = {}
     cant_max_materias = 2
 
+    fecha_inicio = datetime.date(hoy.year, 3, 1)
+    ultimo_dia_mes = (fecha_inicio.replace(month=mes % 12 + 1, day=1) - datetime.timedelta(days=1)).day
+    fecha_fin = datetime.date(hoy.year, 12, ultimo_dia_mes)
+
+
     if hoy.month < 3 or hoy.month > 12:
         print("Fuera de rango para actualización.")
         return {}
 
-    cuatrimestre_analizado = 1 if hoy.month <= 7 else 2
+    #cuatrimestre_analizado = 1 if hoy.month <= 7 else 2
 
-    for alumno in alumnos_activos:
+    for alumno in alumnos_firm_ult_compdepag:
         cant_materias_alumno = MateriaAlumno.objects.filter(alumno=alumno, anio=anio_actual).count()
         cuotas_pendientes = Cuota.objects.filter(
             fecha_vencimiento__lte=hoy,
             alumno=alumno,
             estado__in=["Impaga", "Vencida", "Pagada parcialmente"],
-            cuatrimestre=cuatrimestre_analizado
+            fecha_vencimiento__range=[fecha_inicio,fecha_fin]
+            #cuatrimestre=cuatrimestre_analizado
         ).order_by("nro_cuota")
 
         if cuotas_pendientes.exists():         

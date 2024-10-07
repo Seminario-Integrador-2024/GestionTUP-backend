@@ -9,11 +9,6 @@ from django.core.files import File
 from ..alumnos.models import Alumno
 
 
-choices_estado = (
-    ("Informado", "Informado"),
-    ("Confirmado", "Confirmado"),
-)
-
 class Pago(models.Model):
     """
     Represents a payment made by a student.

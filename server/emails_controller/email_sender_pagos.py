@@ -54,8 +54,6 @@ def tomar_datos_del_pago(pago):
     Alumno:{alumno.user.full_name}
     DNI: {alumno.user.dni}
     Email:{alumno.user.email}
-    CUIL: NN-DDDDDDD-N
-    Monto del pago informado: ${monto_informado}
     Comentario: {comentario}
     Nombre de la Carrera: Tecnicatura Universitaria en Programación
     Fecha: {cuota['fecha_informado']}
