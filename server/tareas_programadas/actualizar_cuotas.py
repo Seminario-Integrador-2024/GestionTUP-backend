@@ -14,6 +14,18 @@ DATABASES = {
     'default': env.db(),  # Usa environ para configurar la base de datos
 }
 
+
+import os
+import dj_database_url
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL)
+    }
+
+
 # Configuración de Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 django.setup()
@@ -39,15 +51,15 @@ def actualizacion_de_cuotas():
         print("No hay compromisos de pago.")
         return {}
 
-    alumnos_firm_ult_compdepag = FirmaCompPagoAlumno.objects.filter(compromiso_de_pago=ultimo_compromiso, alumno__in=alumnos_activos)
+    #alumnos_firm_ult_compdepag = FirmaCompPagoAlumno.objects.filter(compromiso_de_pago=ultimo_compromiso, alumno__in=alumnos_activos)
     hoy = timezone.now().date()
     anio_actual = hoy.year
     alumnos_cuota_vencida = {}
     cant_max_materias = 2
 
-    fecha_inicio = datetime.date(hoy.year, 3, 1)
-    ultimo_dia_mes = (fecha_inicio.replace(month=mes % 12 + 1, day=1) - datetime.timedelta(days=1)).day
-    fecha_fin = datetime.date(hoy.year, 12, ultimo_dia_mes)
+    #fecha_inicio = datetime.date(hoy.year, 3, 1)
+    #ultimo_dia_mes = (fecha_inicio.replace(month=mes % 12 + 1, day=1) - datetime.timedelta(days=1)).day
+    #fecha_fin = datetime.date(hoy.year, 12, ultimo_dia_mes)
 
 
     if hoy.month < 3 or hoy.month > 12:
@@ -56,13 +68,14 @@ def actualizacion_de_cuotas():
 
     #cuatrimestre_analizado = 1 if hoy.month <= 7 else 2
 
-    for alumno in alumnos_firm_ult_compdepag:
-        cant_materias_alumno = MateriaAlumno.objects.filter(alumno=alumno, anio=anio_actual).count()
+    for alumno in alumnos_activos:
+        print(alumno)
+        cant_materias_alumno = MateriaAlumno.objects.filter(id_alumno=alumno.user.dni, anio=anio_actual).count()
         cuotas_pendientes = Cuota.objects.filter(
             fecha_vencimiento__lte=hoy,
             alumno=alumno,
             estado__in=["Impaga", "Vencida", "Pagada parcialmente"],
-            fecha_vencimiento__range=[fecha_inicio,fecha_fin]
+            #fecha_vencimiento__range=[fecha_inicio,fecha_fin]
             #cuatrimestre=cuatrimestre_analizado
         ).order_by("nro_cuota")
 
@@ -70,27 +83,28 @@ def actualizacion_de_cuotas():
             fechas_vencimiento_monto = {}
 
             if cant_materias_alumno > cant_max_materias:
-                if hoy >= ultimo_compromiso.fecha_vencimiento_2:
+                if hoy.day >= ultimo_compromiso.fecha_vencimiento_2:
                     fechas_vencimiento_monto[ultimo_compromiso.fecha_vencimiento_2] = ultimo_compromiso.monto_completo_2venc
-                elif hoy >= ultimo_compromiso.fecha_vencimiento_3:
+                elif hoy.day >= ultimo_compromiso.fecha_vencimiento_3:
                     fechas_vencimiento_monto[ultimo_compromiso.fecha_vencimiento_3] = ultimo_compromiso.monto_completo_3venc
             else:
-                if hoy >= ultimo_compromiso.fecha_vencimiento_2:
+                if hoy.day >= ultimo_compromiso.fecha_vencimiento_2:
                     fechas_vencimiento_monto[ultimo_compromiso.fecha_vencimiento_2] = ultimo_compromiso.monto_reducido__2venc
-                elif hoy >= ultimo_compromiso.fecha_vencimiento_3:
+                elif hoy.day >= ultimo_compromiso.fecha_vencimiento_3:
                     fechas_vencimiento_monto[ultimo_compromiso.fecha_vencimiento_3] = ultimo_compromiso.monto_reducido_3venc
             
             for cuota in cuotas_pendientes:
                 if cuota.estado in ["Impaga", "Vencida"]:
                     cuota.estado = "Vencida"
-                    cuota.fecha_vencimiento = list(fechas_vencimiento_monto.keys())[0]
+                    cuota.fecha_vencimiento = datetime.date(hoy.year, hoy.month, list(fechas_vencimiento_monto.keys())[0])
                     cuota.monto = list(fechas_vencimiento_monto.values())[0]
                 cuota.save()
 
                 if cuota.fecha_vencimiento < hoy:
                     alumno.estado_financiero = "Inhabilitado" 
-                    #Agregar a la tabla Inabilitaciones
-                
+                    ###############################
+                    # Agregar a la tabla Inabilitaciones
+                    ###############################
               
                 if alumno in alumnos_cuota_vencida:
                     alumnos_cuota_vencida[alumno].append(cuota)
@@ -132,9 +146,19 @@ def enviar_aviso_de_vencimiento(alumnos_cuota_vencida):
     print("Correos enviados")
 
 
+alumnos_cuota_vencida = actualizacion_de_cuotas()
+enviar_aviso_de_vencimiento(alumnos_cuota_vencida)
+alumnos_cuota_vencida = actualizacion_de_cuotas()
 
-
-
+print("Contenido de alumnos_cuota_vencida:")
+for alumno, cuotas in alumnos_cuota_vencida.items():
+    print(f"\nAlumno: {alumno}")
+    print("Cuotas vencidas:")
+    for cuota in cuotas:
+        print(f"  - Nro. Cuota: {cuota.nro_cuota}")
+        print(f"    Fecha de vencimiento: {cuota.fecha_vencimiento}")
+        print(f"    Monto: {cuota.monto}")
+        print(f"    Estado: {cuota.estado}")
 
 
 

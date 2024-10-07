@@ -54,6 +54,7 @@ def tomar_datos_del_pago(pago):
     Alumno:{alumno.user.full_name}
     DNI: {alumno.user.dni}
     Email:{alumno.user.email}
+    Monto del pago informado: ${monto_informado}
     Comentario: {comentario}
     Nombre de la Carrera: Tecnicatura Universitaria en Programación
     Fecha: {cuota['fecha_informado']}
@@ -62,9 +63,9 @@ def tomar_datos_del_pago(pago):
     
     for cuota in cuotas_info:
         if cuota['tipo'] == "Cuota":
-            body += f"\n- Cuota {cuota['nro_cuota']}: {cuota['estado']} - Monto total de la cuota: $ {cuota['monto']} - Suma de todos los pagos parciales: ${cuota['total_pagado_anteriormente']}\n"
+            body += f"\n- Cuota {cuota['nro_cuota']} - Monto total de la cuota: $ {cuota['monto']} - Suma de todos los pagos parciales: ${cuota['total_pagado_anteriormente']}\n"
         else:
-             body += f"\n- Matricula {cuota['nro_cuota']}: {cuota['estado']} - Monto total de la matricula: $ {cuota['monto']} - Suma de todos los pagos parciales: ${cuota['total_pagado_anteriormente']}\n"
+             body += f"\n- Matricula {cuota['nro_cuota']} - Monto total de la matricula: $ {cuota['monto']} - Suma de todos los pagos parciales: ${cuota['total_pagado_anteriormente']}\n"
 
 
     body += "\nPor favor, proceder con las verificaciones correspondientes.\n\nAtentamente,\nGestiónTUP de Pagos"
