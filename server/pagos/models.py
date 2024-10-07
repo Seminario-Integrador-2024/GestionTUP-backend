@@ -7,6 +7,10 @@ from django.utils import timezone
 
 from ..alumnos.models import Alumno
 
+choices_pago = (
+    ("Informado", "Informado"),
+    ("Confirmado", "Confirmado"),
+)
 
 class Pago(models.Model):
     """
@@ -119,6 +123,12 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
         os.remove(instance.archivo_pdf.path)
 
 
+choices_cuota = (
+    ("Impaga", "Impaga"),
+    ("Pagada Parcialmente", "Pagada Parcialmente"),
+    ("Pagada Completamente", "Pagada Completamente"),
+    ("Vencida", "Vencida"),
+)
 
 class Cuota(models.Model):
     """
