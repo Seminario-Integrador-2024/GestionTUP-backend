@@ -47,14 +47,18 @@ def actualizacion_de_cuotas():
 
     ultimo_compromiso = CompromisoDePago.objects.order_by('-fecha_carga_comp_pdf').first()
     
+    fechas_vencimiento_1_2_3 = [ultimo_compromiso.fecha_vencimiento_1,
+                                ultimo_compromiso.fecha_vencimiento_2,
+                                ultimo_compromiso.fecha_vencimiento_3]
+    
     hoy = timezone.now().date()
 
     if not ultimo_compromiso:
         print("No hay compromisos de pago.")
         return {}
 
-    if hoy.day > ultimo_compromiso.fecha_vencimiento_1:
-        #alumnos_firm_ult_compdepag = FirmaCompPagoAlumno.objects.filter(compromiso_de_pago=ultimo_compromiso, alumno__in=alumnos_activos)
+    
+    if hoy.day in fechas_vencimiento_1_2_3:
         
         anio_actual = hoy.year
         alumnos_cuota_vencida = {}
@@ -119,19 +123,22 @@ def enviar_aviso_de_vencimiento(alumnos_cuota_vencida):
         print("No hay correos que enviar.")
         return
 
-    for alumno, cuotas in alumnos_cuota_vencida.items():
-        body = f"Hola {alumno.user.full_name}, "
-        subject = ""
-
-        if alumno.estado_financiero == "Inhabilitado":
-            subject = "Actualización de cuotas y estado financiero"
-            cuotas_vencidas = ", ".join([str(cuota.nro_cuota) for cuota in cuotas])
-            body += f"tienes cuotas vencidas y estás, temporalmente, inhabilitado hasta que abones la/s cuota/s {cuotas_vencidas}.  \nSaludos. \nAtte. Tesorería"
-        else:
-            cuotas_actualizadas = ", ".join([str(cuota.nro_cuota) for cuota in cuotas])
-            subject = "Actualización de cuotas"
-            body += f"se ha actualizado el monto y la fecha de vencimiento de las siguientes cuotas: {cuotas_actualizadas}. \nNo te olvides de abonar. \nSaludos. \nAtte. Tesorería"
+    for alumno, cuotas_actualizadas in alumnos_cuota_vencida.items():
+        subject = "Actualización de cuotas"
+        body = f"Estimado/a {alumno.user.full_name},\n\n"
+        body += "Se han actualizado los montos y las fechas de vencimiento de las siguientes cuotas:\n\n"
         
+        for cuota in cuotas_actualizadas:
+            if cuota.tipo =="Cuota":
+                body += f"- Cuota {cuota.nro_cuota}: Nuevo monto ${cuota.monto}, vence el {cuota.fecha_vencimiento}\n"
+            else:
+                body += f"- Cuota {cuota.nro_cuota} (Matrícula): Monto ${cuota.monto}, vence el {cuota.fecha_vencimiento}\n"
+
+        body += "\nNo te olvides de abonar antes de las fechas de vencimiento.\n"
+        body += "Saludos.\nAtte. Tesorería"
+        
+        print(body)
+
         email_recipient = "tesoreriautnpruebas2024@gmail.com"  
 
         mensaje = configurar_mail(body, subject, email_recipient)
