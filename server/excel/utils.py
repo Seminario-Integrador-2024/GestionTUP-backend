@@ -289,31 +289,38 @@ def process_sysadmin(
         if skipped_rows < last_row:
             skipped_rows += 1
             continue
-
+        total_procesado += 1
         # each row is a payment
         # get the alumno before creating the pago
         user_dni: int | None = None
         dni = int(row["Nro Doc"])
         full_name = str(row["Nombre Originante del Ingreso"])
-        if Alumno.objects.get(user__dni=dni):
+        try:
+            Alumno.objects.get(user__dni=dni)
             user_dni = dni
-        elif full_name:
+        except Alumno.DoesNotExist:
             from difflib import SequenceMatcher
 
             all_users = Alumno.objects.values("user__full_name", "user__dni")
+
             for user in all_users:
                 matcher = SequenceMatcher(None, full_name, user["user__full_name"])
                 if matcher.ratio() >= 0.9:  # matches 90% of the full_name
                     user_dni = user.get("user__dni")
                     break
         else:
-            not_processed.setdefault(idx, row)
+            not_processed.setdefault(
+                idx,
+                row["Nombre Originante del Ingreso"] + ": " + str(row["Nro Doc"]),
+            )
             continue
         if (
             user_dni and not row["ID Recibo Anulado"]
         ):  # process only non-voided receipts
             total_procesado += 1
+
             alumno = Alumno.objects.get(user__dni=user_dni)
+            # raise ValueError("Llego hasta aca" + str(user_dni) + ": " + full_name)
             alumno_pk = alumno.user
 
             estado_pago = "Informado"  # informado/no informado/ confirmado
@@ -383,11 +390,10 @@ def process_sysadmin(
 
         if row["ID Recibo Anulado"]:  # voided receipt
             # get the pago and set the estado to anulado
-            pago = Pago.objects.get(id=row["ID Recibo Anulado"])
-            pago.estado = "Anulado"
-            pago.save()
-        else:
-            not_processed.setdefault(idx, row)
+            not_processed.setdefault(
+                idx,
+                row["Nombre Originante del Ingreso"] + ": " + str(row["Nro Doc"]),
+            )  # agrego a no procesados hasta averiguar como manejar los anulados
     # fin bucle sysadmin
 
     # process all blocked students
@@ -418,12 +424,7 @@ def process_sysadmin(
                 al.estado_financiero = "Habilitado"
                 al.save()
                 alumnos_rehabilitados.setdefault(al.user.dni, rehab)
-    return list(
-        last_row,
-        total_procesado,
-        alumnos_rehabilitados,
-        not_processed,
-    )
+    return [last_row, total_procesado, alumnos_rehabilitados, not_processed]
 
 
 if __name__ == "__main__":

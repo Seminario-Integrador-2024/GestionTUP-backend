@@ -1,5 +1,3 @@
-from typing import Any
-
 import pandas as pd
 from rest_framework.exceptions import APIException
 from rest_framework.exceptions import ParseError
@@ -147,16 +145,6 @@ class SysAdminCreateSerializer(ModelSerializer[Excel]):
     Args:
         ModelSerializer (_type_): _description_
     """
-    def validate(self, attrs: Any) -> Any:
-        result = super().validate(attrs)
-        result["ult_fila"] = self.context["ult_fila"]
-
-    def create(self, validated_data: Any) -> Excel:
-        last_row = validated_data.pop("ult_fila")
-        instance = super().create(validated_data)
-        instance.last_reviewed = last_row
-        instance.save()
-        return instance
 
     def validate_excel(self, value):
         allowed_extensions = ["xlsx", "xls"]
@@ -263,7 +251,7 @@ class SysAdminCreateSerializer(ModelSerializer[Excel]):
             ret["total_procesado"] = self.context["total_procesado"]
         if "total_no_procesado" in self.context:
             ret["total_no_procesado"] = self.context["total_no_procesado"]
-            ret["no_procesados"] = self.context["no_procesados"]
+            # ret["no_procesados"] = self.context["no_procesados"]
 
     class Meta:
         model = Excel
