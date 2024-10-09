@@ -6,12 +6,9 @@ from server.alumnos.models import Alumno
 
 #  custom imports
 from server.alumnos.models import Inhabilitacion
-from server.alumnos.models import TipoEstado
-from server.alumnos.models import TipoInhabilitacion
+from server.materias.models import Materia
 from server.users.api.serializers import UserCreateSerializer
 from server.users.models import User
-from server.materias.models import Materia
-
 
 
 class AlumnoRetrieveSerializer(serializers.ModelSerializer):
@@ -51,7 +48,6 @@ class AlumnoCreateSerializer(serializers.ModelSerializer[Alumno]):
         return Alumno.objects.create(user=user_instance, **validated_data)
 
 
-
 class AlumnosPagYNoCuotaSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="user.full_name", read_only=True)
 
@@ -60,22 +56,9 @@ class AlumnosPagYNoCuotaSerializer(serializers.ModelSerializer):
         fields = ["user","full_name","estado_financiero","legajo"]
 
 
-
 class InhabilitacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inhabilitacion
-        fields = "__all__"
-
-
-class TipoInhabilitacionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoInhabilitacion
-        fields = "__all__"
-
-
-class TipoEstadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TipoEstado
         fields = "__all__"
 
 class MateriaSerializer(serializers.ModelSerializer):

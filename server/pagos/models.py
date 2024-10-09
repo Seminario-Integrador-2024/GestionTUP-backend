@@ -26,10 +26,10 @@ class Pago(models.Model):
     """
 
     id_pago = models.AutoField(primary_key=True)
-    comentario = models.TextField(blank=True)
+    comentario = models.TextField(blank=True, default="")
     monto_informado = models.FloatField(blank=False, null=False, default=0)
     monto_confirmado = models.FloatField(blank=False, null=False, default=0)
-    estado = models.CharField(blank=True)
+    estado = models.CharField(blank=True, default="Pendiente", max_length=255)
     fecha = models.DateField()
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
 

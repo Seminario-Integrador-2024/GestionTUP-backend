@@ -146,7 +146,6 @@ class Rehabilitados(models.Model):
     legajo = models.ForeignKey(Alumno, to_field="legajo", on_delete=models.DO_NOTHING)
     fecha_rehabilitacion = models.DateTimeField(
         auto_now_add=True,
-        input_formats=["%Y-%m-%d %H:%M"],
     )
     fecha_deshabilitacion = models.DateTimeField(null=True, blank=False)
 

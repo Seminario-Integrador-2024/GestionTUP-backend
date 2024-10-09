@@ -295,17 +295,17 @@ def process_sysadmin(
         user_dni: int | None = None
         dni = int(row["Nro Doc"])
         full_name = str(row["Nombre Originante del Ingreso"])
-        if Alumno.objects.filter(user__dni=dni).exists():
+        if Alumno.objects.get(user__dni=dni):
             user_dni = dni
         elif full_name:
             # TODO: make parcial match with the full_name
             from difflib import SequenceMatcher
 
-            all_users = Alumno.objects.values("full_name", "dni")
+            all_users = Alumno.objects.values("user__full_name", "user__dni")
             for user in all_users:
-                matcher = SequenceMatcher(None, full_name, user["full_name"])
+                matcher = SequenceMatcher(None, full_name, user["user__full_name"])
                 if matcher.ratio() >= 0.9:  # matches 90% of the full_name
-                    user_dni = user.get("dni")
+                    user_dni = user.get("user__dni")
                     break
         else:
             not_processed.setdefault(idx, row)
@@ -314,22 +314,22 @@ def process_sysadmin(
             user_dni and not row["ID Recibo Anulado"]
         ):  # process only non-voided receipts
             total_procesado += 1
-            alumno = Alumno.objects.get(alumno__user=user_dni)
-            alumno__pk = alumno.user.dni
+            raise ValueError(Alumno.objects.get(user__dni=user_dni))
+            alumno_pk = alumno.user
 
             estado_pago = "Informado"  # informado/no informado/ confirmado
             estado_cuota = "Pagado Completamente"
             # get all informed pagos by the alumno and sort by date
             pago_alumno = (
                 Pago.objects.filter(
-                    alumno=alumno__pk,
+                    alumno=alumno_pk,
                     estado=estado_pago,
                 )
                 .order_by("fecha")
                 .first()
             )
             cuotas_alumno = Cuota.objects.filter(
-                Q(alumno=alumno__pk) & ~Q(estado=estado_cuota),
+                Q(alumno=alumno_pk) & ~Q(estado=estado_cuota),
             ).order_by("fecha_vencimiento")
 
             # if there's a pago and a pending cuota
@@ -382,7 +382,7 @@ def process_sysadmin(
                         linea_a_confirmar.monto_aplicado = nuevo_monto
                         linea_a_confirmar.save()
 
-        elif row["ID Recibo Anulado"]:  # voided receipt
+        if row["ID Recibo Anulado"]:  # voided receipt
             # get the pago and set the estado to anulado
             pago = Pago.objects.get(id=row["ID Recibo Anulado"])
             pago.estado = "Anulado"
