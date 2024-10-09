@@ -94,6 +94,7 @@ class FirmaCompPagoAlumnoCompletoSerializer(serializers.ModelSerializer):
     legajo = serializers.CharField(source="alumno.legajo", read_only=True)
     estado_financiero = serializers.CharField(source="alumno.estado_financiero", read_only=True)
     estado_academico = serializers.CharField(source="alumno.estado_academico", read_only=True)
+    anio_ingreso = serializers.IntegerField(source="alumno.anio_ingreso", read_only=True)
 
     class Meta:
         model = FirmaCompPagoAlumno
@@ -108,6 +109,7 @@ class FirmaCompPagoAlumnoCompletoSerializer(serializers.ModelSerializer):
             "fecha_firmado",
             "estado_financiero",
             "estado_academico", 
+            "anio_ingreso"
         ]
 
     def get_compromiso_de_pago(self, obj):
