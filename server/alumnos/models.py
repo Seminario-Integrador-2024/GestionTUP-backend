@@ -25,6 +25,8 @@ last_year = (
     ("1C-" + str(current_year), "1C-" + str(current_year)),
     ("2C-" + str(current_year), "2C-" + str(current_year)),
 )
+
+
 class Alumno(models.Model):
     """
     Represents a student.
@@ -116,8 +118,41 @@ class Inhabilitacion(models.Model):
 
     id_alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
     fecha_desde = models.DateTimeField()
-    fecha_hasta = models.DateTimeField(blank = True, null=True)
+    fecha_hasta = models.DateTimeField(blank=True, null=True)
     descripcion = models.TextField()
+    fecha_hasta = models.DateTimeField()
+    descripcion = models.TextField()
+
+    # fecha desde y id alumno clave primaria compuesta
+    def __str__(self) -> str:
+        return super().__str__()
+
+
+class Rehabilitados(models.Model):
+    """
+    Represents a student who has been rehabilitated after up to date payment installment.
+
+    Args:
+        Alumno (type): The Alumno model.
+
+    Attributes:
+        user (OneToOneField): The user associated with the student.
+        fecha_deshabilitacion (DateTimeField): The date and time of the student was inhabilitated.
+    """
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        to_field="dni",
+        default=0,
+        primary_key=True,
+    )
+    estado = models.CharField(choices=choices_fin, default="Rehabilitado")
+    legajo = models.ForeignKey(Alumno, to_field="legajo", on_delete=models.DO_NOTHING)
+    fecha_rehabilitacion = models.DateTimeField(
+        auto_now_add=True,
+    )
+    fecha_deshabilitacion = models.DateTimeField(null=True, blank=False)
 
     def __str__(self) -> str:
         return super().__str__()
