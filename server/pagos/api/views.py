@@ -13,6 +13,8 @@ import os
 from rest_framework.decorators import parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from rest_framework.filters import OrderingFilter
+
 # third party imports
 from .serializers import *
 from ..paginations import *
@@ -238,10 +240,11 @@ class CuotaViewSet(viewsets.ModelViewSet):
 
 class CuotaDeUnAlumnoViewSet(viewsets.ModelViewSet):
     lookup_field = 'alumno_id'
-    queryset: BaseManager[Cuota] = Cuota.objects.all()
+    queryset: BaseManager[Cuota] = Cuota.objects.all().order_by('id_cuota') 
     serializer_class = CuotaDeUnAlumnoSerializer
     pagination_class = CuotasResultSetPagination
-    
+
+   
 
     def list(self, request, alumno_id=None):
         queryset = self.get_queryset().filter(alumno_id=alumno_id)

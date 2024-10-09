@@ -119,13 +119,21 @@ def cargar_cuotas_alumno(alumno_id,ultimo_compromiso):
 
     # Crear 5 cuotas mensuales 
     for i in range(1, 6):
+        if i == 1:
+            monto_a_usar = monto  
+        else:
+            if materias_alumno > cant_min_materias:
+                monto_a_usar = ultimo_compromiso.monto_completo
+            else:
+                monto_a_usar = ultimo_compromiso.cuota_reducida 
+
+        # Crear la cuota
         Cuota.objects.create(
-            nro_cuota=nro_cuota_ultima+i,
-            monto=monto,
+            nro_cuota=nro_cuota_ultima + i,
+            monto=monto_a_usar,
             compdepago=ultimo_compromiso,
-            #estado=estado_cuota,
-            estado="Impaga",
-            fecha_vencimiento=fecha_primer_vencimiento(ultimo_compromiso,i),
+            estado="Impaga",  # Se mantiene el estado como 'Impaga'
+            fecha_vencimiento=fecha_primer_vencimiento(ultimo_compromiso, i-1),
             fecha_pago_devengado=timezone.now(),
             tipo="Cuota",
             alumno=alumno
@@ -147,49 +155,4 @@ def nro_ultima_cuota(alumno_id):
         return 0 
 
     return ultima_cuota.nro_cuota if ultima_cuota else 0
-
-
-
-
-
-
-
-
-
-
-
-#---------------------- Seguir completando esta funcion después ----------------------
-def actualizar_cuotas(alumno_id,ultimo_compromiso):
-    materias_alumno = MateriaAlumno.objects.filter(alumno=alumno,anio=anio_actual).count()
-    hora_actual = timezone.now().time()
-
-
-    if hora_actual.hour >= 12:
-            
-        hoy = timezone.now().date()
-        cuotas_pendientes = Cuota.objects.filter(estado="Pendiente",fecha_vencimiento__lte=hoy)
-
-        if cuotas_pendientes.exists():
-            
-            fechas_vencimiento_monto = {}
-
-            if materias_alumno <= cant_min_materias:
-
-                if hoy >= ultimo_compromiso.fecha_vencimiento_2:
-                    fechas_vencimiento_monto = {ultimo_compromiso.fecha_vencimiento_2 : ultimo_compromiso.monto_completo_2venc}
-                elif hoy >= ultimo_compromiso.fecha_vencimiento_3:
-                    fechas_vencimiento_monto = {ultimo_compromiso.fecha_vencimiento_3 : ultimo_compromiso.monto_completo_3venc}
-            else:
-                if hoy >= ultimo_compromiso.fecha_vencimiento_2:
-                    fechas_vencimiento_monto = { ultimo_compromiso.fecha_vencimiento_2 : ultimo_compromiso.monto_reducido__2venc}
-                elif hoy >= ultimo_compromiso.fecha_vencimiento_3:
-                    fechas_vencimiento_monto = {ultimo_compromiso.fecha_vencimiento_3 : ultimo_compromiso.monto_reducido_3venc}
-    
-    for cuota in cuotas_pendientes:
-        cuota.estado = "Vencida"
-        cuota.fecha_vencimiento = list(fechas_vencimiento_monto.keys())[0]
-        cuota.monto = list(fechas_vencimiento_monto.values())[0]
-        cuota.save()
-
-    return "cuotas actualizadas"
 
