@@ -298,7 +298,6 @@ def process_sysadmin(
         if Alumno.objects.get(user__dni=dni):
             user_dni = dni
         elif full_name:
-            # TODO: make parcial match with the full_name
             from difflib import SequenceMatcher
 
             all_users = Alumno.objects.values("user__full_name", "user__dni")
