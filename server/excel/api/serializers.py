@@ -251,7 +251,7 @@ class SysAdminCreateSerializer(ModelSerializer[Excel]):
             ret["total_procesado"] = self.context["total_procesado"]
         if "total_no_procesado" in self.context:
             ret["total_no_procesado"] = self.context["total_no_procesado"]
-            # ret["no_procesados"] = self.context["no_procesados"]
+            ret["no_procesados"] = self.context["no_procesados"]
 
     class Meta:
         model = Excel
