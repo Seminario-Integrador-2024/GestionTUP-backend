@@ -313,7 +313,7 @@ def process_sysadmin(
             user_dni and not row["ID Recibo Anulado"]
         ):  # process only non-voided receipts
             total_procesado += 1
-            raise ValueError(Alumno.objects.get(user__dni=user_dni))
+            alumno = Alumno.objects.get(user__dni=user_dni)
             alumno_pk = alumno.user
 
             estado_pago = "Informado"  # informado/no informado/ confirmado
