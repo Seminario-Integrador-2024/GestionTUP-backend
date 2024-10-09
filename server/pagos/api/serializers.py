@@ -92,6 +92,8 @@ class FirmaCompPagoAlumnoCompletoSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source="alumno.user.email", read_only=True)
     full_name = serializers.CharField(source="alumno.user.full_name", read_only=True)
     legajo = serializers.CharField(source="alumno.legajo", read_only=True)
+    estado_financiero = serializers.CharField(source="alumno.estado_financiero", read_only=True)
+    estado_academico = serializers.CharField(source="alumno.estado_academico", read_only=True)
 
     class Meta:
         model = FirmaCompPagoAlumno
@@ -104,6 +106,8 @@ class FirmaCompPagoAlumnoCompletoSerializer(serializers.ModelSerializer):
             "firmado",
             "compromiso_de_pago",
             "fecha_firmado",
+            "estado_financiero",
+            "estado_academico", 
         ]
 
     def get_compromiso_de_pago(self, obj):
@@ -127,7 +131,8 @@ class AlumnoSerializer(serializers.ModelSerializer):
             "email", 
             "full_name", 
             "legajo", 
-            "estado", 
+            "estado_financiero",
+            "estado_academico", 
             "anio_ingreso", 
             "telefono", 
             "tel_res", 

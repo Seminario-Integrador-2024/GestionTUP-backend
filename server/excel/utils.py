@@ -32,14 +32,37 @@ B. cargar archivo sysacad xls en la bbdd
 4.4 idem 4.1 y 4.2 para Materia_Alumno(DNI,Materia,Año).
 5 reporte de registros duplicados de Materia_Alumno
 6 reporte de registros agregados de Materia_Alumno
+
+
+procesar sysadmin xls
+    # TODO: matchear alumnos con sysadmin
+    # TODO: procesar montos a cada pago
+    # TODO: procesar pagos neg/o netos nulos o positivos
+    # TODO: cambiar estado alumnos positivos est_fin y tabla inhabilitacion
+    --
+    # TODO: extra - devolver total de registros nuevos procesados (unicidad montos y nro recibo)
+    # TODO: extra - devolver total de registros no procesados (id nro fila)
 """
 
+import datetime
 import json
 import re
 from typing import TYPE_CHECKING
 
 import pandas as pd
+from django.contrib.auth.hashers import make_password
 from django.db import transaction
+from django.db.models import Q
+
+from server.alumnos.models import Alumno
+from server.alumnos.models import Inhabilitacion
+from server.alumnos.models import Rehabilitados
+from server.materias.models import Materia
+from server.materias.models import MateriaAlumno
+from server.pagos.models import Cuota
+from server.pagos.models import LineaDePago
+from server.pagos.models import Pago
+from server.users.models import User
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -47,7 +70,7 @@ if TYPE_CHECKING:
 # functions definitions
 
 
-def validate_excel(data: pd.DataFrame) -> dict:
+def validate_sysacad(data: pd.DataFrame) -> dict:
     """
     Validates the data in a DataFrame against a set lambda functions.
 
@@ -165,12 +188,6 @@ def load_data(data: pd.DataFrame):
     - data (pd.DataFrame): The data to load into the database.
     """
     # models definitions
-    from django.contrib.auth.hashers import make_password
-
-    from server.alumnos.models import Alumno
-    from server.materias.models import Materia
-    from server.materias.models import MateriaAlumno
-    from server.users.models import User
 
     # sanitize the data
 
@@ -236,6 +253,179 @@ def load_data(data: pd.DataFrame):
                 materia_alumno.save()
 
 
+# procesar sysadmin xls
+
+
+def process_sysadmin(
+    data: pd.DataFrame,
+    last_row=0,
+    *args,
+    **kwargs,
+) -> list:
+    """
+    process_sysadmin processes the sysadmin data and updates
+    the payments and the students status.
+
+    Args:
+        data (pd.DataFrame): the data to process as a pandas DataFrame.
+        last_row (int, optional): last row processed. Defaults to 0.
+
+    Returns:
+        tuple[int, int, int, dict, dict]: a tuple containing results of the process
+        as follows:
+        0. last_row: the last row processed,
+        1. total_procesado: the total number of processed rows,
+        2. total_no_procesado: the total number of unprocessed rows,
+        3. alumnos_rehabilitados: a dict containing the rehabilitated students,
+        4. not_processed: a dict containing the unprocessed rows.
+    """
+    total_procesado = 0
+    # sanitize the data
+    skipped_rows: int = 0
+    not_processed = {}
+    # iterate over the rows, create the instances and save them
+    for idx, row in data.iterrows():
+        # skip the rows to the last processed row
+        if skipped_rows < last_row:
+            skipped_rows += 1
+            continue
+
+        # each row is a payment
+        # get the alumno before creating the pago
+        user_dni: int | None = None
+        dni = int(row["Nro Doc"])
+        full_name = str(row["Nombre Originante del Ingreso"])
+        if Alumno.objects.get(user__dni=dni):
+            user_dni = dni
+        elif full_name:
+            from difflib import SequenceMatcher
+
+            all_users = Alumno.objects.values("user__full_name", "user__dni")
+            for user in all_users:
+                matcher = SequenceMatcher(None, full_name, user["user__full_name"])
+                if matcher.ratio() >= 0.9:  # matches 90% of the full_name
+                    user_dni = user.get("user__dni")
+                    break
+        else:
+            not_processed.setdefault(idx, row)
+            continue
+        if (
+            user_dni and not row["ID Recibo Anulado"]
+        ):  # process only non-voided receipts
+            total_procesado += 1
+            alumno = Alumno.objects.get(user__dni=user_dni)
+            alumno_pk = alumno.user
+
+            estado_pago = "Informado"  # informado/no informado/ confirmado
+            estado_cuota = "Pagado Completamente"
+            # get all informed pagos by the alumno and sort by date
+            pago_alumno = (
+                Pago.objects.filter(
+                    alumno=alumno_pk,
+                    estado=estado_pago,
+                )
+                .order_by("fecha")
+                .first()
+            )
+            cuotas_alumno = Cuota.objects.filter(
+                Q(alumno=alumno_pk) & ~Q(estado=estado_cuota),
+            ).order_by("fecha_vencimiento")
+
+            # if there's a pago and a pending cuota
+            remanente = 0  # asumimos que no hay remanente aun
+            pago_alumno.monto_confirmado = float(row["Monto"])
+            if pago_alumno and cuotas_alumno:
+                for cuota in cuotas_alumno:
+                    with transaction.atomic():
+                        linea_pagos = LineaDePago.objects.filter(
+                            # obtener todas las lineas de pago hechas por el alumno
+                            pago=pago_alumno,
+                            cuota=cuota,
+                        )
+                        if linea_pagos.exists():
+                            linea_a_confirmar = linea_pagos.get(
+                                monto_aplicado=pago_alumno.monto_informado,
+                            )
+                            monto_confirmado = (
+                                sum(
+                                    # obtener el monto confirmado, hasta el momento
+                                    [linea.monto_aplicado for linea in linea_pagos],
+                                )
+                                - pago_alumno.monto_informado
+                            )
+                        else:
+                            linea_a_confirmar = LineaDePago(
+                                pago=pago_alumno,
+                                cuota=cuota,
+                            )
+                            monto_confirmado = 0
+                        # asumimos estado pagado completamente
+                        cuota.estado = estado_cuota
+                        nuevo_monto = (
+                            float(row["Monto"]) if remanente == 0 else remanente
+                        )
+                        pago_alumno.estado = "Confirmado"
+                        if (
+                            monto_confirmado + nuevo_monto
+                        ) < cuota.monto:  # pago parcial de cuota
+                            cuota.estado = "Pagado Parcialmente"
+                            remanente = 0
+                        elif (
+                            monto_confirmado + nuevo_monto
+                        ) > cuota.monto:  # pago completo/excedente
+                            nuevo_monto = cuota.monto - monto_confirmado
+                            remanente = float(row["Monto"]) - nuevo_monto
+                        pago_alumno.monto_confirmado = nuevo_monto + monto_confirmado
+                        pago_alumno.save()
+                        cuota.save()
+                        linea_a_confirmar.monto_aplicado = nuevo_monto
+                        linea_a_confirmar.save()
+
+        if row["ID Recibo Anulado"]:  # voided receipt
+            # get the pago and set the estado to anulado
+            pago = Pago.objects.get(id=row["ID Recibo Anulado"])
+            pago.estado = "Anulado"
+            pago.save()
+        else:
+            not_processed.setdefault(idx, row)
+    # fin bucle sysadmin
+
+    # process all blocked students
+    with transaction.atomic():
+        alumnos_rehabilitados = {}
+        als = Alumno.objects.filter(estado_financiero="Inhabilitado")
+        for al in als:
+            cuotas_vencidas = Cuota.objects.filter(
+                alumno=al,
+                estado="Vencido",
+            ).exists()
+            if not cuotas_vencidas:
+                rehab = {
+                    "full_name": al.user.full_name,
+                    "legajo": al.legajo,
+                }
+                inh = Inhabilitacion.objects.get(
+                    id_alumno=al,
+                    fecha_hasta=None,
+                )
+                Rehabilitados.objects.create(
+                    user=al.user,
+                    legajo=al.legajo,
+                    fecha_deshabilitacion=inh.fecha_desde,
+                )
+                inh.fecha_hasta = datetime.datetime.now()
+                inh.save()
+                al.estado_financiero = "Habilitado"
+                al.save()
+                alumnos_rehabilitados.setdefault(al.user.dni, rehab)
+    return list(
+        last_row,
+        total_procesado,
+        alumnos_rehabilitados,
+        not_processed,
+    )
+
+
 if __name__ == "__main__":
     # Call the main function
 
@@ -249,43 +439,4 @@ if __name__ == "__main__":
         filetypes=(("Excel files", "*.xls *.xlsx"), ("all files", "*.*")),
     )
 
-    # read the file
-    COL_HEADER = 6  # header row with column names in the excel file
-    df: pd.DataFrame = pd.read_excel(
-        io=path,
-        names=[
-            "Extensión",
-            "Esp.",
-            "Ingr.",
-            "Año",
-            "Legajo",
-            "Documento",
-            "Apellido y Nombres",
-            "Comisión",
-            "Materia",
-            "Nombre de materia",
-            "Estado",
-            "Recursa",
-            "Cant.",
-            "Mail",
-            "Celular",
-            "Teléfono",
-            "Tel. Resid",
-            "Nota 1",
-            "Nota 2",
-            "Nota 3",
-            "Nota 4",
-            "Nota 5",
-            "Nota 6",
-            "Nota 7",
-            "Nota Final",
-            "Nombre",
-        ],
-        skiprows=COL_HEADER - 1,
-        engine="openpyxl",
-    )
-    # make index start at 6
-    df.index = df.index + COL_HEADER + 1
-    # result: dict = validate_excel(df)
-    # do something with result
-    print(df.iloc[0:20, 10:17].head(20))
+    print(process_sysadmin(pd.read_excel(path)))

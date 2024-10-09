@@ -7,9 +7,13 @@ from django.db.models.signals import pre_delete
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
-
 # Create your models here.
+excel_choice = (
+    ("sysacad", "Sysacad"),
+    ("sysadmin", "Sysadmin"),
+)
 class Excel(models.Model):
+
     excel = models.FileField(
         upload_to="excels/",
         validators=[
@@ -17,9 +21,12 @@ class Excel(models.Model):
         ],
         help_text="Only Excel files (.xlsx, .xls) are allowed",
     )
-    uploaded_at = models.DateTimeField(
-        auto_created=True,
-        auto_now_add=True,
+    last_reviewed = models.PositiveBigIntegerField(default=0)
+    excel_type = models.CharField(
+        max_length=50,
+        null=False,
+        choices=excel_choice,
+        default="sysacad",
     )
 
     class Meta:

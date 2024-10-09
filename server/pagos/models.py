@@ -12,6 +12,7 @@ choices_pago = (
     ("Confirmado", "Confirmado"),
 )
 
+
 class Pago(models.Model):
     """
     Represents a payment made by a student.
@@ -30,13 +31,10 @@ class Pago(models.Model):
     """
 
     id_pago = models.AutoField(primary_key=True)
-    comentario = models.TextField(blank=True, null=True)
-    monto_informado = models.FloatField()
-    estado = models.CharField(
-        default="No Informado",
-        choices=choices_pago,
-        max_length=100,
-    )
+    comentario = models.TextField(blank=True, default="")
+    monto_informado = models.FloatField(blank=False, null=False, default=0)
+    monto_confirmado = models.FloatField(blank=False, null=False, default=0)
+    estado = models.CharField(blank=True, default="Pendiente", max_length=255)
     fecha = models.DateField()
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
 
@@ -94,7 +92,11 @@ class CompromisoDePago(models.Model):
     comprimiso_path = models.CharField(max_length=255, blank=True, null=True)
     archivo_pdf = models.FileField(upload_to="compromisos/", blank=True, null=True)
     fecha_ultima_modif = models.DateTimeField(max_length=10, blank=True, null=True)
-    fecha_carga_comp_pdf = models.DateTimeField(max_length=10, auto_now_add=True, blank=True,  null=True)
+    archivo_pdf = models.FileField(upload_to="compromisos/", blank=True, null=True)
+    fecha_ultima_modif = models.DateTimeField(max_length=10, blank=True, null=True)
+    fecha_carga_comp_pdf = models.DateTimeField(
+        max_length=10, auto_now_add=True, blank=True, null=True
+    )
 
     def save(self, *args, **kwargs):
 
@@ -114,6 +116,7 @@ class CompromisoDePago(models.Model):
         if self.archivo_pdf:
             self.comprimiso_path = self.archivo_pdf.url
             super().save(update_fields=["comprimiso_path"])
+            super().save(update_fields=["comprimiso_path"])
 
 
 @receiver(post_delete, sender=CompromisoDePago)
@@ -129,6 +132,15 @@ choices_cuota = (
     ("Pagada Completamente", "Pagada Completamente"),
     ("Vencida", "Vencida"),
 )
+
+
+choices_cuota = (
+    ("Impaga", "Impaga"),
+    ("Pagada Parcialmente", "Pagada Parcialmente"),
+    ("Pagada Completamente", "Pagada Completamente"),
+    ("Vencida", "Vencida"),
+)
+
 
 class Cuota(models.Model):
     """
@@ -155,7 +167,7 @@ class Cuota(models.Model):
     id_cuota = models.AutoField(primary_key=True)
     nro_cuota = models.IntegerField()
     monto = models.FloatField()
-    compdepago =  models.ForeignKey(CompromisoDePago, on_delete=models.CASCADE)
+    compdepago = models.ForeignKey(CompromisoDePago, on_delete=models.CASCADE)
     estado = models.CharField(max_length=25)
     fecha_pago = models.DateField(null=True, blank=True)
     fecha_vencimiento = models.DateField()
@@ -177,13 +189,13 @@ class FirmaCompPagoAlumno(models.Model):
         alumno (ForeignKey): The related Alumno.
         compromiso_de_pago (ForeignKey): The related CompromisoDePago.
         fecha_pago (DateTimeField): The date and time when the payment was made.
-        firmado BooleanField(): The confirmation of having signed  
+        firmado BooleanField(): The confirmation of having signed
     """
 
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
     compromiso_de_pago = models.ForeignKey(CompromisoDePago, on_delete=models.CASCADE)
-    fecha_firmado = models.DateTimeField(auto_now_add=True, blank=True,  null=True )
-    firmado = models.BooleanField(default=True, blank=True,  null=True)
+    fecha_firmado = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    firmado = models.BooleanField(default=True, blank=True, null=True)
 
 
 class LineaDePago(models.Model):
