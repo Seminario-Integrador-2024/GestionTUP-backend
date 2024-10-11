@@ -6,6 +6,7 @@ from rest_framework.routers import SimpleRouter
 from server.alumnos.api.views import AlumnosQueNoPagaronCuotaViewSet
 from server.alumnos.api.views import AlumnosQuePagaronCuotaViewSet
 from server.alumnos.api.views import AlumnosViewSet
+from server.alumnos.api.views import AlumnosInhabilitadosViewSet 
 from server.excel.api.views import SysacadViewSet
 from server.excel.api.views import SysAdminViewSet
 from server.materias.api.views import MateriaViewSet
@@ -115,7 +116,11 @@ url_alumnos = [
         AlumnosQueNoPagaronCuotaViewSet.as_view({"get": "list"}),
         name="alumnos-no-pagaron-cuota",
     ),
+    path(
+        "alumnos/inhabilitados/",
+        AlumnosInhabilitadosViewSet.as_view({"get": "list"}),
+        name="alumnos-inhabilitados",
+    ),
 ]
 
-urlpatterns = router.urls + url_pagos
-urlpatterns += url_alumnos
+urlpatterns = router.urls + url_pagos + url_alumnos
