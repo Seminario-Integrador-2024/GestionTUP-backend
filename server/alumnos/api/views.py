@@ -222,9 +222,7 @@ class AlumnosInhabilitadosViewSet(viewsets.ModelViewSet):
     
     serializer_class = AlumnosInhabilitadosSerializer
     pagination_class = AlumnoResultsSetPagination
-    queryset  = Alumno.objects.filter(estado_financiero = "Inhabilitado")
-    print("queryset", queryset)
-    print("mensaje de pueba")
+    queryset: BaseManager[Alumno] = Alumno.objects.filter(estado_financiero = "Inhabilitado")
     
     def list(self, request, *args, **kwargs):
         # Obtiene la queryset de alumnos inhabilitados

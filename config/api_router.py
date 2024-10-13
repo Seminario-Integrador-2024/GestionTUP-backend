@@ -117,7 +117,7 @@ url_alumnos = [
         name="alumnos-no-pagaron-cuota",
     ),
     path(
-        "alumnos/inhabilitados/",
+        "alumnos/inhabilitados",
         AlumnosInhabilitadosViewSet.as_view({"get": "list"}),
         name="alumnos-inhabilitados",
     ),
