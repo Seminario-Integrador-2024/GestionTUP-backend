@@ -116,6 +116,28 @@ class AlumnosQuePagaronCuotaViewSet(viewsets.ModelViewSet):
             .distinct()
         )
 
+        # Obtener el parámetro 'legajo' 'dni' o 'full_name' de la URL, si está presente
+        valor = request.query_params.get('valor', None)
+        if valor:
+            if valor.isdigit():
+                alumnos_sin_pago_legajo = alumnos_sin_pago.filter(legajo=valor)
+                alumnos_sin_pago_dni = alumnos_sin_pago.filter(user=valor)
+                if alumnos_sin_pago_legajo.exists():
+                    alumnos_sin_pago = alumnos_sin_pago_legajo
+                elif alumnos_sin_pago_dni.exists():
+                    alumnos_sin_pago = alumnos_sin_pago_dni
+                else:
+                    return Response({"error": "No existe el alumno buscado."}, status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+
+                alumnos_sin_pago_full_name = alumnos_sin_pago.filter(user__full_name__icontains=valor)
+                if alumnos_sin_pago_full_name.exists():
+                    alumnos_sin_pago = alumnos_sin_pago_full_name
+                else:
+                    return Response({"error": "No existe el alumno buscado."}, status=status.HTTP_404_NOT_FOUND)
+
+
         # Aplicar paginación
         page = self.paginate_queryset(alumnos_con_pago)
         if page is not None:
@@ -203,6 +225,29 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
             .distinct()
         )
 
+        # Obtener el parámetro 'legajo' 'dni' o 'full_name' de la URL, si está presente
+        valor = request.query_params.get('valor', None)
+        if valor:
+            if valor.isdigit():
+                alumnos_sin_pago_legajo = alumnos_sin_pago.filter(legajo=valor)
+                alumnos_sin_pago_dni = alumnos_sin_pago.filter(user=valor)
+                if alumnos_sin_pago_legajo.exists():
+                    alumnos_sin_pago = alumnos_sin_pago_legajo
+                elif alumnos_sin_pago_dni.exists():
+                    alumnos_sin_pago = alumnos_sin_pago_dni
+                else:
+                    return Response({"error": "No existe el alumno buscado."}, status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+
+                alumnos_sin_pago_full_name = alumnos_sin_pago.filter(user__full_name__icontains=valor)
+                if alumnos_sin_pago_full_name.exists():
+                    alumnos_sin_pago = alumnos_sin_pago_full_name
+                else:
+                    return Response({"error": "No existe el alumno buscado."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
         # Verifica cuántos alumnos quedan sin pago
         print("Alumnos sin pago:", alumnos_sin_pago.count())
 
@@ -218,6 +263,7 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
 
 
 
+
 class AlumnosInhabilitadosViewSet(viewsets.ModelViewSet):
     
     serializer_class = AlumnosInhabilitadosSerializer
@@ -229,3 +275,4 @@ class AlumnosInhabilitadosViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
