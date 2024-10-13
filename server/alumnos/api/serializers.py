@@ -66,28 +66,21 @@ class AlumnosInhabilitadosSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="user.full_name", read_only=True)
 
     print(Inhabilitacion.objects.all().values_list('id', 'fecha_desde', 'fecha_hasta', 'descripcion', 'id_alumno_id'))
-    print(Alumno.objects.filter(
-            inhabilitacion__fecha_hasta__isnull=True,
-            inhabilitacion__fecha_desde__isnull=False
-
-        ).distinct())
+    print("#################### ",Alumno.objects.filter(estado_financiero="Inhabilitado"))
 
     class Meta:
         model = Alumno
         fields = ["user", "full_name", "estado_financiero", "legajo"]
 
-
-    def get_inhabilitados(cls):
-        """
-        Método de clase para obtener los alumnos inhabilitados.
-        """
-        inhabilitados = Alumno.objects.filter(
-            inhabilitacion__fecha_hasta__isnull=True,
-            inhabilitacion__fecha_desde__isnull=False
-        ).distinct()
+    """
+    def get_inhabilitados():
+        
+        #Método de clase para obtener los alumnos inhabilitados.
+        
+        inhabilitados = Alumno.objects.filter(estado_financiero="Inhabilitado")
 
         print("Alumnos inhabilitados:", inhabilitados)
-        return inhabilitados
+        return inhabilitados"""
 
 
 

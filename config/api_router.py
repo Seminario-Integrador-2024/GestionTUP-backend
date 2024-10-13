@@ -94,12 +94,12 @@ url_pagos = [
         name="cuotas-impagas-de-alumno",
     ),
     path(
-        "pagos/alumno/<int:alumno_id>",
+        "pagos/alumno/<int:alumno_id>/",
         PagoDeUnAlumnoViewSet.as_view(),
         name="pago-de-un-alumno",
     ),
     path(
-        "pagos/alumno/resumen_pagos/<int:alumno_id>",
+        "pagos/alumno/resumen_pagos/<int:alumno_id>/",
         PagoDeUnAlumnoRetrieveViewSet.as_view({"get": "list"}),
         name="pago-de-un-alumno-retrive",
     ),

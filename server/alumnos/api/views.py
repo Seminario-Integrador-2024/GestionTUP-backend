@@ -219,16 +219,13 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
 
 
 class AlumnosInhabilitadosViewSet(viewsets.ModelViewSet):
-    pagination_class = AlumnoResultsSetPagination
+    
     serializer_class = AlumnosInhabilitadosSerializer
-
+    pagination_class = AlumnoResultsSetPagination
+    queryset  = Alumno.objects.filter(estado_financiero = "Inhabilitado")
+    print("queryset", queryset)
     print("mensaje de pueba")
     
-    def get_queryset(self):
-        # Retorna la lista de alumnos inhabilitados
-        queryset = self.serializer_class.get_inhabilitados()
-        return queryset
-
     def list(self, request, *args, **kwargs):
         # Obtiene la queryset de alumnos inhabilitados
         queryset = self.get_queryset()
