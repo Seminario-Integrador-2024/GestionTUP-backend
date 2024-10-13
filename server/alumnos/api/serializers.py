@@ -16,7 +16,7 @@ class AlumnoRetrieveSerializer(serializers.ModelSerializer):
     dni = serializers.IntegerField(source="user.dni", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
     full_name = serializers.CharField(source="user.full_name", read_only=True)
-
+    
     class Meta:
         model = Alumno
         # fields = "__all__"
@@ -60,10 +60,18 @@ class AlumnosPagYNoCuotaSerializer(serializers.ModelSerializer):
 class InhabilitacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inhabilitacion
-        fields = "__all__"
+        fields = '__all__'
+
+class AlumnosInhabilitadosSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source="user.full_name", read_only=True)
+
+    class Meta:
+        model = Alumno
+        fields = ["user", "full_name", "estado_financiero", "legajo"]
 
 
 class MateriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Materia
         fields = "__all__"
+

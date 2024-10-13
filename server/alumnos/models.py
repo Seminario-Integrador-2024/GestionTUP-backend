@@ -72,7 +72,7 @@ class Alumno(models.Model):
         return self.user.full_name
 
     def __repr__(self) -> str:
-        return __str__()
+        return self.__str__()
 
     def __unicode__(self):
         return "%i" % self.user.dni
@@ -119,8 +119,6 @@ class Inhabilitacion(models.Model):
     id_alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
     fecha_desde = models.DateTimeField()
     fecha_hasta = models.DateTimeField(blank=True, null=True)
-    descripcion = models.TextField()
-    fecha_hasta = models.DateTimeField()
     descripcion = models.TextField()
 
     # fecha desde y id alumno clave primaria compuesta

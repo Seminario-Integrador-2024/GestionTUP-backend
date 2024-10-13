@@ -18,9 +18,11 @@ from server.pagos.models import Cuota
 from .serializers import AlumnoCreateSerializer
 from .serializers import AlumnoRetrieveSerializer
 from .serializers import AlumnosPagYNoCuotaSerializer
-from .serializers import InhabilitacionSerializer
+from .serializers import InhabilitacionSerializer 
 from .serializers import MateriaSerializer
+from .serializers import AlumnosInhabilitadosSerializer
 
+from django.utils import timezone
 
 class AlumnosViewSet(viewsets.ModelViewSet):
     lookup_field = "user__dni"
@@ -261,6 +263,16 @@ class AlumnosQueNoPagaronCuotaViewSet(viewsets.ModelViewSet):
 
 
 
-class InhabilitacionViewSet(viewsets.ModelViewSet):
-    queryset: BaseManager[Inhabilitacion] = Inhabilitacion.objects.all()
-    serializer_class = InhabilitacionSerializer
+
+class AlumnosInhabilitadosViewSet(viewsets.ModelViewSet):
+    
+    serializer_class = AlumnosInhabilitadosSerializer
+    pagination_class = AlumnoResultsSetPagination
+    queryset: BaseManager[Alumno] = Alumno.objects.filter(estado_financiero = "Inhabilitado")
+    
+    def list(self, request, *args, **kwargs):
+        # Obtiene la queryset de alumnos inhabilitados
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
