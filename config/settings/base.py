@@ -93,6 +93,7 @@ LOCAL_APPS = [
     "server.materias",
     "server.pagos",
     "server.excel",
+    "server.estadisticas",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

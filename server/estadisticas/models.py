@@ -1,0 +1,2 @@
+# Create your models here.
+# NO VAN MODELOS ACA ... SOLO QUERIES DE ESTADISTICAS EN LA API

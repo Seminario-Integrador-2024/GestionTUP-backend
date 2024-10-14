@@ -35,13 +35,7 @@ B. cargar archivo sysacad xls en la bbdd
 
 
 procesar sysadmin xls
-    # TODO: matchear alumnos con sysadmin
-    # TODO: procesar montos a cada pago
-    # TODO: procesar pagos neg/o netos nulos o positivos
-    # TODO: cambiar estado alumnos positivos est_fin y tabla inhabilitacion
-    --
-    # TODO: extra - devolver total de registros nuevos procesados (unicidad montos y nro recibo)
-    # TODO: extra - devolver total de registros no procesados (id nro fila)
+    # TODO: refactor para admitir servico sysacad y susadmin por parte de los servidores de la facultad
 """
 
 import datetime

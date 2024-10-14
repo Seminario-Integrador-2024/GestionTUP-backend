@@ -3,10 +3,12 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework.routers import SimpleRouter
 
+from server.alumnos.api.views import AlumnosInhabilitadosViewSet
 from server.alumnos.api.views import AlumnosQueNoPagaronCuotaViewSet
 from server.alumnos.api.views import AlumnosQuePagaronCuotaViewSet
 from server.alumnos.api.views import AlumnosViewSet
 from server.alumnos.api.views import AlumnosInhabilitadosViewSet, AlumnosAInhabilitarViewSet 
+from server.estadisticas.api.views import EstadisticasAPIView
 from server.excel.api.views import SysacadViewSet
 from server.excel.api.views import SysAdminViewSet
 from server.materias.api.views import MateriaViewSet
@@ -44,7 +46,7 @@ router.register("firmas", FirmaCompPagoAlumnoViewSets, basename="firma")
 router.register("materias", MateriaViewSet, basename="materia")
 router.register("pagos", PagoViewSet, basename="pago")
 router.register("users", UsersViewSet, basename="user")
-
+router.register("estadisticas", EstadisticasAPIView, basename="estadisticas")
 
 app_name = "api"
 
