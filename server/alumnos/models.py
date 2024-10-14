@@ -154,3 +154,28 @@ class Rehabilitados(models.Model):
 
     def __str__(self) -> str:
         return super().__str__()
+
+
+
+class AlumnosAInhabilitar(models.Model):
+    """
+    Represents students who are to be inhabilitated.
+
+    Attributes:
+        user (OneToOneField): The user associated with the student.
+        legajo (ForeignKey): The foreign key to the Alumno model.
+        fecha_inhabilitacion (DateTimeField): The date and time of the inhabilitacion.
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        to_field="dni",
+        default=0,
+        primary_key=True,
+    )
+    
+    legajo = models.ForeignKey(Alumno, to_field="legajo", on_delete=models.CASCADE)
+    fecha_inhabilitacion = models.DateField()
+
+    def __str__(self) -> str:
+        return super().__str__()

@@ -7,6 +7,7 @@ from server.alumnos.api.views import AlumnosInhabilitadosViewSet
 from server.alumnos.api.views import AlumnosQueNoPagaronCuotaViewSet
 from server.alumnos.api.views import AlumnosQuePagaronCuotaViewSet
 from server.alumnos.api.views import AlumnosViewSet
+from server.alumnos.api.views import AlumnosInhabilitadosViewSet, AlumnosAInhabilitarViewSet 
 from server.estadisticas.api.views import EstadisticasAPIView
 from server.excel.api.views import SysacadViewSet
 from server.excel.api.views import SysAdminViewSet
@@ -101,7 +102,7 @@ url_pagos = [
     ),
     path(
         "pagos/alumno/resumen_pagos/<int:alumno_id>/",
-        PagoDeUnAlumnoRetrieveViewSet.as_view({"get": "list"}),
+        PagoDeUnAlumnoRetrieveViewSet.as_view({'get': 'list'}),
         name="pago-de-un-alumno-retrive",
     ),
 ]
@@ -121,6 +122,16 @@ url_alumnos = [
         "alumnos/inhabilitados",
         AlumnosInhabilitadosViewSet.as_view({"get": "list"}),
         name="alumnos-inhabilitados",
+    ),
+    path(
+        "alumnos/alumnos-a-inhabilitar",
+        AlumnosAInhabilitarViewSet.as_view({"get": "list"}),
+        name="alumnos-a-inhabilitar",
+    ),
+    path(
+        "alumnos/alumno-a-inhabilitar/<int:legajo>/",
+        AlumnosAInhabilitarViewSet.as_view({"delete": "destroy"}),
+        name="alumno-a-inhabilitar",
     ),
 ]
 

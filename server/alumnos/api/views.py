@@ -2,15 +2,17 @@
 import datetime
 
 from django.db.models import Q
+from django.http import Http404 
 from django.db.models.manager import BaseManager
 from rest_framework import status
+
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
-from server.alumnos.models import Alumno
-from server.alumnos.models import Inhabilitacion
+from server.alumnos.models import Alumno,AlumnosAInhabilitar
+from server.alumnos.models import Inhabilitacion, AlumnosAInhabilitar
 from server.alumnos.paginations import AlumnoResultsSetPagination
 from server.materias.models import Materia
 from server.pagos.models import Cuota
@@ -20,7 +22,8 @@ from .serializers import AlumnoRetrieveSerializer
 from .serializers import AlumnosPagYNoCuotaSerializer
 from .serializers import InhabilitacionSerializer 
 from .serializers import MateriaSerializer
-from .serializers import AlumnosInhabilitadosSerializer
+from .serializers import AlumnosInhabilitadosSerializer 
+from .serializers import AlumnosAInhabilitarSerializer
 
 from django.utils import timezone
 
@@ -274,5 +277,44 @@ class AlumnosInhabilitadosViewSet(viewsets.ModelViewSet):
         # Obtiene la queryset de alumnos inhabilitados
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+
+        # Aplicar paginación
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = AlumnosPagYNoCuotaSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
         return Response(serializer.data)
 
+class AlumnosAInhabilitarViewSet(viewsets.ModelViewSet):
+    lookup_field = 'legajo'
+    serializer_class = AlumnosInhabilitadosSerializer
+    pagination_class = AlumnoResultsSetPagination 
+    #queryset: BaseManager[Alumno] = Alumno.objects.all()
+    queryset: BaseManager[AlumnosAInhabilitar] = AlumnosAInhabilitar.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        # Obtiene la queryset de alumnos inhabilitados
+        alumnos_estado_inhabilitado = Alumno.objects.filter(estado_financiero = "Inhabilitado")
+        # Filtra aquellos que están inhabilitados en el modelo 'AlumnosAInhabilitar'
+        queryset = alumnos_estado_inhabilitado.filter(alumnosainhabilitar__legajo__in=alumnos_estado_inhabilitado.values('legajo'))
+        
+        #queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        # Aplicar paginación
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = AlumnosInhabilitadosSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+   
+    def destroy(self, request, *args, **kwargs):
+        # Intenta obtener el objeto a eliminar
+        instance = self.get_object()  # Esto busca el objeto por el PK en la URL
+        self.perform_destroy(instance)  # Elimina el objeto
+        return Response({"detail": "Alumno inhabilitado eliminado correctamente."}, status=status.HTTP_204_NO_CONTENT)
+   
+
+    def perform_destroy(self, instance):
+        # Puedes personalizar lo que ocurre al eliminar un alumno inhabilitado aquí
+        instance.delete()
