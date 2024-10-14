@@ -30,6 +30,7 @@ django.setup()
 
 
 # Mis imports
+from django.db.models import Q
 from server.pagos.models import Cuota, CompromisoDePago, LineaDePago, FirmaCompPagoAlumno
 from server.alumnos.models import Alumno, Inhabilitacion
 from server.materias.models import Materia, MateriaAlumno
@@ -100,6 +101,7 @@ def actualizacion_de_cuotas():
                                 ultimo_compromiso.fecha_vencimiento_3]
     
     hoy = timezone.now().date()
+
     
     if not ultimo_compromiso:
         print("No hay compromisos de pago.")
@@ -108,6 +110,7 @@ def actualizacion_de_cuotas():
     alumnos_cuota_vencida = {}
 
     if hoy.day in fechas_vencimiento_1_2_3:
+
         print(f"{datetime.datetime.now()} - Tarea programada: Actualización de cuotas ")
         
         anio_actual = hoy.year
@@ -120,16 +123,24 @@ def actualizacion_de_cuotas():
 
 
         for alumno in alumnos_activos:
+            cuotas_pendientes = []
             cant_materias_alumno = MateriaAlumno.objects.filter(id_alumno=alumno.user.dni, anio=anio_actual).count()
-            cuotas_pendientes = Cuota.objects.filter(
-                fecha_vencimiento__lte=hoy,
+            cuotas_pendientes1 = Cuota.objects.filter(
                 alumno=alumno,
+                fecha_vencimiento__lte=hoy,
                 estado__in=["Impaga", "Vencida", "Pagada parcialmente"],
             )
+
+            cuotas_pendientes2 = Cuota.objects.filter(
+                alumno=alumno,
+                estado = "Vencida",
+            )
+
+            cuotas_pendientes = cuotas_pendientes1.union(cuotas_pendientes2)
             
                 
             if cuotas_pendientes.exists():       
-
+                
                 fechas_vencimiento_monto = {}
 
                 if cant_materias_alumno > cant_max_materias:
@@ -177,8 +188,8 @@ def actualizacion_de_cuotas():
                     alumnos_cuota_vencida[alumno].append(cuota)
                 else:
                     alumnos_cuota_vencida[alumno] = [cuota]
-        else:
-            return {}
+    else:
+        return {}
 
     return alumnos_cuota_vencida
 
