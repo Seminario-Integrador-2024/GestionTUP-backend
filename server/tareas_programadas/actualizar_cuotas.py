@@ -174,7 +174,7 @@ def actualizacion_de_cuotas():
                     
                     esta_registrado = AlumnosAInhabilitar.objects.filter(user=alumno.user).exists()
                     
-                    if not esta_registrado:
+                    if not esta_registrado and not tiene_inhabilitacion:
                         AlumnosAInhabilitar.objects.create(user=alumno.user,
                                                            fecha_inhabilitacion = timezone.make_aware(datetime.datetime.combine(hoy, datetime.time.min)),
                                                            legajo = alumno)
