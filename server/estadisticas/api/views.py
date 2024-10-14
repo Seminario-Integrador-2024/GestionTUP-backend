@@ -16,7 +16,11 @@ class EstadisticasAPIView(ViewSet):
         ViewSet (ViewSet): ViewSet from rest_framework
     """
 
-    @action(detail=False, methods=["get"], url_path=r"pagos_mes/(?P<mes>\d+)")
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"pagos_mes/(?P<anio>\d+)/(?P<mes>\d+)",
+    )
     def pagos_mes(self, request, *args, **kwargs):
         """
         Retorna un JSON con los pagos confirmados por alumno y el total del mes
@@ -47,6 +51,13 @@ class EstadisticasAPIView(ViewSet):
                 }
             }
         """
+        if year := int(self.kwargs["anio"]):
+            if year > datetime.now().year:
+                return Response(
+                    f"El anio {year} esta fuera de rango. intente el anio {datetime.now().year} para el anio actual",
+                    status=status.HTTP_428_PRECONDITION_REQUIRED,
+                )
+
         if month := int(self.kwargs["mes"]):
             if month > datetime.now().month or month < 3:
                 return Response(
@@ -54,5 +65,5 @@ class EstadisticasAPIView(ViewSet):
                     status=status.HTTP_428_PRECONDITION_REQUIRED,
                 )
         month = datetime.now().month if month == 0 or not month else month
-        result = get_pagos_por_alumno(month)
+        result = get_pagos_por_alumno(month, year)
         return Response(result)

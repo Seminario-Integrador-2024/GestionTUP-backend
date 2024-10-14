@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from django.db.models.manager import BaseManager
 
 
-def get_pagos_por_alumno(mes: int) -> dict:
+def get_pagos_por_alumno(mes: int, anio: int) -> dict:
     """
     obtiene los pagos confirmados por alumno y el total del mes
     Args:
@@ -25,6 +25,7 @@ def get_pagos_por_alumno(mes: int) -> dict:
         pagos: BaseManager[Pago] = Pago.objects.filter(
             alumno=al_dni,
             fecha__month=mes,
+            fecha__year=anio,
             estado="Confirmado",
         )
         if pagos.exists():
