@@ -5,7 +5,7 @@ from rest_framework import serializers
 from server.alumnos.models import Alumno
 
 #  custom imports
-from server.alumnos.models import Inhabilitacion
+from server.alumnos.models import Inhabilitacion, AlumnosAInhabilitar
 from server.materias.models import Materia
 from server.users.api.serializers import UserCreateSerializer
 from server.users.models import User
@@ -75,3 +75,7 @@ class MateriaSerializer(serializers.ModelSerializer):
         model = Materia
         fields = "__all__"
 
+class AlumnosAInhabilitarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlumnosAInhabilitar
+        fields = "__all__"

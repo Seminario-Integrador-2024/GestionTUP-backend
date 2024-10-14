@@ -32,7 +32,7 @@ django.setup()
 # Mis imports
 from django.db.models import Q
 from server.pagos.models import Cuota, CompromisoDePago, LineaDePago, FirmaCompPagoAlumno
-from server.alumnos.models import Alumno, Inhabilitacion
+from server.alumnos.models import Alumno, Inhabilitacion, AlumnosAInhabilitar
 from server.materias.models import Materia, MateriaAlumno
 from server.emails_controller.email_config import configurar_mail, enviar_email, Credenciales
 
@@ -159,7 +159,7 @@ def actualizacion_de_cuotas():
                 if cuota.fecha_vencimiento.month < hoy.month:
                     alumno.estado_financiero = "Inhabilitado" 
                     alumno.save()
-
+                    
                     descripcion = f"El alumno {alumno.user.full_name} ha sido inhabilitado por falta de pagos"
                     
                     tiene_inhabilitacion = Inhabilitacion.objects.filter(id_alumno = alumno, fecha_hasta__isnull = True).exists()
@@ -171,7 +171,15 @@ def actualizacion_de_cuotas():
                             fecha_desde=timezone.make_aware(datetime.datetime.combine(hoy, datetime.time.min)),
                             descripcion=descripcion
                         )
-
+                    
+                    esta_registrado = AlumnosAInhabilitar.objects.filter(user=alumno.user).exists()
+                    
+                    if not esta_registrado:
+                        AlumnosAInhabilitar.objects.create(user=alumno.user,
+                                                           fecha_inhabilitacion = timezone.make_aware(datetime.datetime.combine(hoy, datetime.time.min)),
+                                                           legajo = alumno)
+                    
+                       
                 else:    
                     cuota.fecha_vencimiento = datetime.date(hoy.year, hoy.month, list(fechas_vencimiento_monto.keys())[0])
                     
