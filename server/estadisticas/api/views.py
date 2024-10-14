@@ -64,6 +64,7 @@ class EstadisticasAPIView(ViewSet):
                     f"El mes {month} esta fuera de rango  intente el mes {datetime.now().month} para el mes actual",
                     status=status.HTTP_428_PRECONDITION_REQUIRED,
                 )
+        year = datetime.now().year if year == 0 or not year else year
         month = datetime.now().month if month == 0 or not month else month
         result = get_pagos_por_alumno(month, year)
         return Response(result)
