@@ -16,7 +16,7 @@ class EstadisticasAPIView(ViewSet):
         ViewSet (ViewSet): ViewSet from rest_framework
     """
 
-    @action(detail=False, methods=["get"], url_path=r"pagos_mes/(?P<mes>)")
+    @action(detail=False, methods=["get"], url_path=r"pagos_mes/(?P<mes>\d+)")
     def pagos_mes(self, request, *args, **kwargs):
         """
         Retorna un JSON con los pagos confirmados por alumno y el total del mes
