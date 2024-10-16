@@ -30,7 +30,10 @@ def get_pagos_por_alumno(mes: int, anio: int) -> dict:
         )
         if pagos.exists():
             al_dni = str(al_dni)
-            result["alumnos"].setdefault(al_dni, {"total": 0, "pagos": []})
+            result["alumnos"].setdefault(
+                al_dni,
+                {"nombre": alumno.user.full_name, "total": 0, "pagos": []},
+            )
             for pago_alumno in pagos:
                 result["alumnos"][al_dni]["pagos"].append(
                     {"fecha": pago_alumno.fecha, "monto": pago_alumno.monto_confirmado},
