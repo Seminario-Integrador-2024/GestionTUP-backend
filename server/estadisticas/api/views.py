@@ -40,6 +40,7 @@ class EstadisticasAPIView(ViewSet):
                 "total_mes": 0,
                 "alumnos": {
                     "12345678": {
+                        "nombre": "Alumno Nombre",
                         "total": 0,
                         "pagos": [
                             {
