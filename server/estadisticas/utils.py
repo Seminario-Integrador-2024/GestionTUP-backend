@@ -18,7 +18,7 @@ def get_pagos_por_alumno(mes: int, anio: int) -> dict:
         el total del mes y subtotal por alumno
     """
     result: dict = {"total_mes": 0, "alumnos": {}}
-    alumnos: BaseManager[Alumno] = Alumno.objects.all()
+    alumnos: BaseManager[Alumno] = Alumno.objects.all().order_by("user__full_name")
 
     for alumno in alumnos:
         al_dni = alumno.user__dni
