@@ -42,3 +42,4 @@ def get_pagos_por_alumno(mes: int, anio: int) -> dict:
                 result["total_mes"] += pago_alumno.monto_confirmado
     # sort dict by alumnos name
     result["alumno"] = dict(sorted(result["alumno"].items()))
+    return result
