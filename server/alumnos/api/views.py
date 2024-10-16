@@ -281,14 +281,14 @@ class AlumnosInhabilitadosViewSet(viewsets.ModelViewSet):
         # Aplicar paginación
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = AlumnosPagYNoCuotaSerializer(page, many=True)
+            serializer = self.serializer_class(page, many=True)
             return self.get_paginated_response(serializer.data)
 
         return Response(serializer.data)
 
 class AlumnosAInhabilitarViewSet(viewsets.ModelViewSet):
     lookup_field = 'legajo'
-    serializer_class = AlumnosInhabilitadosSerializer
+    serializer_class = AlumnosPagYNoCuotaSerializer
     pagination_class = AlumnoResultsSetPagination 
     #queryset: BaseManager[Alumno] = Alumno.objects.all()
     queryset: BaseManager[AlumnosAInhabilitar] = AlumnosAInhabilitar.objects.all()
@@ -304,7 +304,7 @@ class AlumnosAInhabilitarViewSet(viewsets.ModelViewSet):
         # Aplicar paginación
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = AlumnosInhabilitadosSerializer(page, many=True)
+            serializer = self.serializer_class(page, many=True)
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)
    
@@ -318,3 +318,14 @@ class AlumnosAInhabilitarViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         # Puedes personalizar lo que ocurre al eliminar un alumno inhabilitado aquí
         instance.delete()
+    
+class InhabilitacionesViewSet(viewsets.ModelViewSet):
+    lookup_field = 'user__dni'
+    serializer_class = InhabilitacionSerializer
+    pagination_class = AlumnoResultsSetPagination 
+    queryset = Inhabilitacion.objects.all()  # Cambié la manera de filtrar
+    
+    def get_queryset(self):
+        # Aquí obtienes el valor de `dni` desde la URL para filtrar correctamente
+        dni = self.kwargs.get(self.lookup_field)
+        return Inhabilitacion.objects.filter(id_alumno_id__user__dni=dni)

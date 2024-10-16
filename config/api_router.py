@@ -7,7 +7,9 @@ from server.alumnos.api.views import AlumnosInhabilitadosViewSet
 from server.alumnos.api.views import AlumnosQueNoPagaronCuotaViewSet
 from server.alumnos.api.views import AlumnosQuePagaronCuotaViewSet
 from server.alumnos.api.views import AlumnosViewSet
-from server.alumnos.api.views import AlumnosInhabilitadosViewSet, AlumnosAInhabilitarViewSet 
+from server.alumnos.api.views import AlumnosInhabilitadosViewSet
+from server.alumnos.api.views import AlumnosAInhabilitarViewSet
+from server.alumnos.api.views import InhabilitacionesViewSet
 from server.estadisticas.api.views import EstadisticasAPIView
 from server.excel.api.views import SysacadViewSet
 from server.excel.api.views import SysAdminViewSet
@@ -132,6 +134,11 @@ url_alumnos = [
         "alumnos/alumno-a-inhabilitar/<int:legajo>/",
         AlumnosAInhabilitarViewSet.as_view({"delete": "destroy"}),
         name="alumno-a-inhabilitar",
+    ),
+        path(
+        "alumnos/<int:user__dni>/inhabilitaciones/",
+        InhabilitacionesViewSet.as_view({"get": "list"}),
+        name="inhabilitciones-de-alumno",
     ),
 ]
 
