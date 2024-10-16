@@ -279,3 +279,24 @@ class CuotasImpagasDeUnAlumnoViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+class AlumnosConMatriculaPagadaViewSet(viewsets.ViewSet):
+    """
+    Vista para obtener los alumnos que han pagado completamente la matrícula.
+    """
+    def list(self, request):
+        # Filtrar las cuotas que son del tipo "Matricula" y están en estado "Pagada completamente"
+        cuotas_matricula_pagada = Cuota.objects.filter(tipo="Matricula", estado="Pagada Completamente")
+        print("Pepe", cuotas_matricula_pagada)
+
+        # Obtener los IDs de los alumnos asociados a estas cuotas
+        alumnos_ids = cuotas_matricula_pagada.values_list('alumno_id', flat=True).distinct()
+
+        # Filtrar los alumnos que tienen esas cuotas
+        alumnos_con_matricula_pagada = Alumno.objects.filter(user_id__in=alumnos_ids)
+
+        # Serializar los datos de los alumnos
+        serializer = AlumnoSerializer(alumnos_con_matricula_pagada, many=True)
+
+        # Retornar la respuesta con los datos serializados
+        return Response(serializer.data, status=status.HTTP_200_OK)
