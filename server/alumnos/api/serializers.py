@@ -57,18 +57,22 @@ class AlumnosPagYNoCuotaSerializer(serializers.ModelSerializer):
         fields = ["user", "full_name", "estado_financiero", "legajo"]
 
 
-class InhabilitacionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Inhabilitacion
-        fields = '__all__'
 
 class AlumnosInhabilitadosSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="user.full_name", read_only=True)
+    fecha_inhabilitacion = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Alumno
-        fields = ["user", "full_name", "estado_financiero", "legajo"]
+        fields = ["user", "full_name", "estado_financiero", "legajo", "fecha_inhabilitacion"]
 
+    def get_fecha_inhabilitacion(self, obj):
+        # Obtener la última inhabilitación del alumno, si existe
+        ultima_inhabilitacion = Inhabilitacion.objects.filter(id_alumno=obj).order_by('-fecha_desde').last()
+        if ultima_inhabilitacion:
+            print(ultima_inhabilitacion)
+            return ultima_inhabilitacion.fecha_desde
+        return None
 
 class MateriaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,3 +83,9 @@ class AlumnosAInhabilitarSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlumnosAInhabilitar
         fields = "__all__"
+
+
+class InhabilitacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Inhabilitacion
+        fields = '__all__'
