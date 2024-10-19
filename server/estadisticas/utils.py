@@ -1,4 +1,5 @@
 from server.pagos.models import Pago
+from server.pagos.models import Cuota
 
 
 def get_pagos_por_alumno(mes: int, anio: int) -> dict:
@@ -14,7 +15,7 @@ def get_pagos_por_alumno(mes: int, anio: int) -> dict:
     """
     result = {"total_mes": 0, "alumnos": {}}
 
-    pagos = Pago.objects.filter(
+    pagos = Pago.objects.filter(  # noqa: E1101
         fecha__month=mes,
         fecha__year=anio,
         estado="Confirmado",
@@ -52,7 +53,7 @@ def get_cuotas_vencidas(mes: int, anio: int) -> dict:
     """
     result = {"total_mes": 0, "alumnos": {}}
 
-    cuotas = Cuota.objects.filter(
+    cuotas = Cuota.objects.filter(  # noqa: E1101
         fecha_vencimiento__month=mes,
         fecha_vencimiento__year=anio,
         estado="Vencida",
