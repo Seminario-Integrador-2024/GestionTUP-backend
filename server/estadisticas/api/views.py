@@ -21,7 +21,7 @@ class EstadisticasAPIView(ViewSet):
         methods=["get"],
         url_path=r"pagos_mes/(?P<anio>\d+)/(?P<mes>\d+)",
     )
-    def pagos_mes(self, request, *args, **kwargs):
+    def pagos_mes(self, request):
         """
         Retorna un JSON con los pagos confirmados por alumno y el total del mes
 
@@ -54,14 +54,16 @@ class EstadisticasAPIView(ViewSet):
                 }
             }
         """
-        if year := int(self.kwargs["anio"]):
+        request_data = request.query_params
+        
+        if year := request_data.get("anio"):
             if year > datetime.now().year:
                 return Response(
                     f"El anio {year} esta fuera de rango. intente el anio {datetime.now().year} para el anio actual",
                     status=status.HTTP_428_PRECONDITION_REQUIRED,
                 )
 
-        if month := int(self.kwargs["mes"]):
+        if month := request_data.get("mes"):
             if month < 3 or month > 12:
                 return Response(
                     f"El mes {month} esta fuera de rango  intente el mes {datetime.now().month} para el mes actual",
@@ -108,14 +110,15 @@ class EstadisticasAPIView(ViewSet):
                 }
             }
         """
-        if year := int(self.kwargs["anio"]):
+        request_data = request.query_params
+        if year := request_data.get("anio"):
             if year > datetime.now().year:
                 return Response(
                     f"El anio {year} esta fuera de rango. intente el anio {datetime.now().year} para el anio actual",
                     status=status.HTTP_428_PRECONDITION_REQUIRED,
                 )
 
-        if month := int(self.kwargs["mes"]):
+        if month := request_data.get("mes"):
             if month > datetime.now().month or month < 3:
                 return Response(
                     f"El mes {month} esta fuera de rango  intente el mes {datetime.now().month} para el mes actual",
