@@ -44,7 +44,7 @@ def get_pagos_por_alumno(mes: int, anio: int) -> dict:
     return result
 
 
-def get_cuotas_vencidas(mes: int, anio: int) -> dict:
+def get_cuotas_vencidas() -> dict:
     """
     Obtiene las cuotas vencidas por alumno y el total del mes.
     Args:
@@ -54,8 +54,8 @@ def get_cuotas_vencidas(mes: int, anio: int) -> dict:
     result = {"total_mes": 0, "alumnos": {}}
 
     cuotas = Cuota.objects.filter(  # noqa: E1101
-        fecha_vencimiento__month=mes,
-        fecha_vencimiento__year=anio,
+        # fecha_vencimiento__month=mes,
+        # fecha_vencimiento__year=anio,
         estado="Vencida",
     )
 

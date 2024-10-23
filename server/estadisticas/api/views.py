@@ -77,7 +77,7 @@ class EstadisticasAPIView(ViewSet):
     @action(
         detail=False,
         methods=["get"],
-        url_path=r"cuotas_vencidas/(?P<anio>\d+)/(?P<mes>\d+)",
+        url_path=r"cuotas_vencidas",
     )
     def cuotas_vencidas(self, request, *args, **kwargs):
         """
@@ -111,20 +111,20 @@ class EstadisticasAPIView(ViewSet):
             }
         """
         request_data = request.query_params
-        if year := request_data.get("anio"):
-            if year > datetime.now().year:
-                return Response(
-                    f"El anio {year} esta fuera de rango. intente el anio {datetime.now().year} para el anio actual",
-                    status=status.HTTP_428_PRECONDITION_REQUIRED,
-                )
+        # if year := request_data.get("anio"):
+        #     if year > datetime.now().year:
+        #         return Response(
+        #             f"El anio {year} esta fuera de rango. intente el anio {datetime.now().year} para el anio actual",
+        #             status=status.HTTP_428_PRECONDITION_REQUIRED,
+        #         )
 
-        if month := request_data.get("mes"):
-            if month > datetime.now().month or month < 3:
-                return Response(
-                    f"El mes {month} esta fuera de rango  intente el mes {datetime.now().month} para el mes actual",
-                    status=status.HTTP_428_PRECONDITION_REQUIRED,
-                )
-        year = datetime.now().year if year > datetime.now().year else year
-        month = datetime.now().month if month > datetime.now().month else month
-        result = get_cuotas_vencidas(month, year)
+        # if month := request_data.get("mes"):
+        #     if month > datetime.now().month or month < 3:
+        #         return Response(
+        #             f"El mes {month} esta fuera de rango  intente el mes {datetime.now().month} para el mes actual",
+        #             status=status.HTTP_428_PRECONDITION_REQUIRED,
+        #         )
+        # year = datetime.now().year if year > datetime.now().year else year
+        # month = datetime.now().month if month > datetime.now().month else month
+        result = get_cuotas_vencidas()
         return Response(result)
